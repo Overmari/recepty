@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>NutriPlan — Все мои рецепты (полная версия)</title>
+    <title>NutriPlan — Полный CRUD | Настройки</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -32,21 +32,24 @@
             padding: 28px 32px;
             margin-bottom: 28px;
             color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
         }
         .hero h1 { font-size: 1.8rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .hero h1 span { background: rgba(255,255,255,0.2); padding: 6px 16px; border-radius: 100px; font-size: 0.8rem; }
         .hero p { margin-top: 12px; opacity: 0.85; }
-        
-        .design-panel {
-            background: rgba(255,255,255,0.95);
-            border-radius: var(--border-radius-card);
-            padding: 20px;
-            margin-bottom: 28px;
+        .settings-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 60px;
+            padding: 10px 20px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
         }
-        .design-controls { display: flex; flex-wrap: wrap; gap: 20px; }
-        .design-group { display: flex; flex-direction: column; gap: 6px; min-width: 130px; }
-        .design-group input, .design-group select { padding: 8px 12px; border-radius: 30px; border: 1px solid #cbd5e1; }
-        .reset-design-btn { background: #eef2ff; border: none; padding: 8px 20px; border-radius: 40px; cursor: pointer; }
         
         .tabs-modern {
             display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px;
@@ -99,17 +102,19 @@
             background: linear-gradient(115deg, #ffffff, #fef9e6);
             border-radius: 32px; padding: 1rem; margin-bottom: 16px; border-left: 8px solid var(--accent-color);
         }
+        .day-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .day-title-lg { font-weight: 700; font-size: 1rem; color: #2c5e3f; }
         .meals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
-        .meal-card-modern { background: white; border-radius: 20px; padding: 12px; border: 1px solid #eef2e6; }
+        .meal-card-modern { background: white; border-radius: 20px; padding: 12px; border: 1px solid #eef2e6; position: relative; }
         .meal-badge { background: #e9f5eb; padding: 2px 10px; border-radius: 30px; font-size: 0.7rem; display: inline-block; }
         .edit-icon { background: #eef2ff; border: none; border-radius: 30px; padding: 4px 12px; font-size: 0.7rem; cursor: pointer; margin-top: 8px; margin-right: 6px; }
+        .delete-day-btn { background: #fee2e2; color: #b91c1c; border: none; border-radius: 30px; padding: 4px 12px; font-size: 0.7rem; cursor: pointer; margin-top: 8px; }
         .show-process-btn { background: none; border: none; color: var(--primary-color); font-size: 0.65rem; cursor: pointer; margin-top: 8px; text-decoration: underline; }
         .custom-text-input { 
             width: 100%; padding: 8px 10px; border-radius: 20px; border: 1px solid #cbd5e1; 
             margin-top: 8px; font-size: 0.85rem; font-weight: 500;
             background: #fffef7;
         }
-        .custom-text-input:focus { outline: none; border-color: var(--primary-color); background: white; }
         .manual-badge { background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 20px; font-size: 0.65rem; margin-left: 6px; display: inline-block; }
         
         .category-filter { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
@@ -122,20 +127,7 @@
         .need-buy { background: #fff3e0; border-radius: 20px; padding: 4px 10px; font-size: 0.8rem; font-weight: 600; display: inline-block; }
         .purchased-row { opacity: 0.6; background: #f0f0f0; }
         .action-buttons { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
-        
-        .add-product-form {
-            background: #f8fafc;
-            border-radius: 28px;
-            padding: 16px;
-            margin-bottom: 20px;
-            border: 1px solid #e2e8f0;
-            display: none;
-        }
-        .add-product-form input, .add-product-form select {
-            padding: 8px 12px;
-            border-radius: 24px;
-            border: 1px solid #cbd5e1;
-        }
+        .delete-product-btn { background: none; border: none; color: #b91c1c; cursor: pointer; font-size: 1rem; }
         
         .add-recipe-form {
             background: linear-gradient(135deg, #ffffff, #f8fafc);
@@ -175,6 +167,8 @@
             width: 100%; padding: 12px; border-radius: 24px; border: 1px solid #cbd5e1; margin-bottom: 12px;
         }
         .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px; }
+        .settings-group { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0; }
+        .settings-group h4 { margin-bottom: 12px; color: var(--primary-color); }
         
         .freeze-card { background: #eef6ec; border-radius: 28px; padding: 16px; margin-bottom: 14px; }
         .shopping-stats { background: #e9f5eb; border-radius: 30px; padding: 8px 16px; display: inline-block; }
@@ -192,47 +186,42 @@
 <body>
 <div class="app-container">
     <div class="hero">
-        <h1>👨‍🍳 NutriPlan <span>80+ полных рецептов</span></h1>
-        <p>Все ваши любимые блюда | Завтраки | Супы | Вторые | Десерты | Выпечка</p>
-    </div>
-
-    <div class="design-panel">
-        <div class="design-controls">
-            <div class="design-group"><label>🎨 Цвет</label><input type="color" id="primaryColor" value="#2c5e3f"></div>
-            <div class="design-group"><label>🎨 Акцент</label><input type="color" id="accentColor" value="#88b04b"></div>
-            <div class="design-group"><label>📄 Фон</label><input type="color" id="bgStart" value="#f0f4f8"><input type="color" id="bgEnd" value="#e9eef5" style="margin-top:4px;"></div>
-            <div class="design-group"><label>🔘 Скругление</label><select id="borderRadius"><option value="24px">Малое</option><option value="44px" selected>Среднее</option><option value="60px">Большое</option></select></div>
-            <button id="resetDesignBtn" class="reset-design-btn">↺ Сброс</button>
+        <div>
+            <h1>👨‍🍳 NutriPlan <span>Полный CRUD</span></h1>
+            <p>Создавайте, читайте, редактируйте и удаляйте | Настройки дизайна и названий</p>
         </div>
+        <button id="openSettingsBtn" class="settings-btn">⚙️ Настройки</button>
     </div>
 
     <div class="tabs-modern">
-        <button class="tab-btn active" data-tab="tab-menu">📅 Меню</button>
-        <button class="tab-btn" data-tab="tab-shopping">🛒 Список покупок</button>
-        <button class="tab-btn" data-tab="tab-recipes">📚 Рецепты</button>
+        <button class="tab-btn active" data-tab="tab-menu" id="tabMenuBtn">📅 Меню</button>
+        <button class="tab-btn" data-tab="tab-shopping" id="tabShoppingBtn">🛒 Список покупок</button>
+        <button class="tab-btn" data-tab="tab-recipes" id="tabRecipesBtn">📚 Рецепты</button>
         <button class="tab-btn" data-tab="tab-tips">💡 Советы</button>
     </div>
 
     <div id="tab-menu" class="tab-content active">
         <div class="glass-card">
             <div class="card-header-flex">
-                <h2>🗓️ Меню на период</h2>
+                <h2 id="menuTitle">🗓️ Меню на период</h2>
                 <div class="period-group" id="periodGroup">
                     <button data-period="week" class="period-btn active-period">📅 Неделя (7 д)</button>
                     <button data-period="2weeks" class="period-btn">📅 2 недели (14 д)</button>
                     <button data-period="month" class="period-btn">📅 Месяц (30 д)</button>
                 </div>
             </div>
-            <button id="generateBtn" class="btn-modern btn-primary-modern" style="width:100%; margin-bottom: 20px;">✨ Сгенерировать меню</button>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button id="generateBtn" class="btn-modern btn-primary-modern">✨ Сгенерировать меню</button>
+                <button id="addDayBtn" class="btn-modern">➕ Добавить день</button>
+            </div>
             <div id="menuContainer"></div>
-            <p style="margin-top: 12px; font-size: 0.7rem; color: #666;">📝 <strong>Ручной ввод:</strong> нажмите "✏️ Заменить" и введите номер блюда из списка или свой текст.</p>
         </div>
     </div>
 
     <div id="tab-shopping" class="tab-content">
         <div class="glass-card">
             <div class="shopping-header">
-                <h2>🛒 Список покупок</h2>
+                <h2 id="shoppingTitle">🛒 Список покупок</h2>
                 <div class="shopping-period-group" id="shoppingPeriodGroup">
                     <button data-shopping-period="week" class="shopping-period-btn active-shopping-period">📋 На неделю</button>
                     <button data-shopping-period="2weeks" class="shopping-period-btn">📋 На 2 недели</button>
@@ -244,22 +233,18 @@
                 <div class="period-info" id="shoppingPeriodInfo">📆 Из меню на: 7 дней</div>
             </div>
             
-            <!-- Кнопка добавления продукта и форма -->
-            <div style="margin-bottom: 16px;">
+            <div style="margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap;">
                 <button id="showAddProductBtn" class="btn-modern btn-primary-modern" style="padding: 6px 16px;">➕ Добавить продукт</button>
+                <button id="importFromMenuBtn" class="btn-modern">🔄 Импорт из меню</button>
             </div>
-            <div id="addProductForm" class="add-product-form">
+            <div id="addProductForm" style="display: none; margin-bottom: 16px; background: #f8fafc; border-radius: 28px; padding: 16px;">
                 <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                    <input type="text" id="newProductName" placeholder="Название продукта" style="flex:2;">
-                    <input type="number" id="newProductQty" placeholder="Кол-во" step="0.1" value="1" style="width: 80px;">
-                    <select id="newProductUnit" style="width: 70px;">
-                        <option value="г">г</option>
-                        <option value="мл">мл</option>
-                        <option value="шт" selected>шт</option>
-                        <option value="кг">кг</option>
-                        <option value="л">л</option>
+                    <input type="text" id="newProductName" placeholder="Название продукта" style="flex:2; padding: 8px; border-radius: 24px; border: 1px solid #cbd5e1;">
+                    <input type="number" id="newProductQty" placeholder="Кол-во" step="0.1" value="1" style="width: 80px; padding: 8px; border-radius: 24px;">
+                    <select id="newProductUnit" style="width: 70px; padding: 8px; border-radius: 24px;">
+                        <option value="г">г</option><option value="мл">мл</option><option value="шт" selected>шт</option>
                     </select>
-                    <input type="number" id="newProductPrice" placeholder="Цена" step="1" value="0" style="width: 80px;">
+                    <input type="number" id="newProductPrice" placeholder="Цена" step="1" value="0" style="width: 80px; padding: 8px; border-radius: 24px;">
                     <button id="confirmAddProductBtn" class="btn-modern btn-primary-modern btn-sm">💾 Добавить</button>
                     <button id="cancelAddProductBtn" class="btn-modern btn-sm">Отмена</button>
                 </div>
@@ -267,14 +252,13 @@
             
             <div style="overflow-x: auto;">
                 <table class="shopping-table" id="shoppingTable">
-                    <thead><tr><th class="checkbox-col">✅</th><th>Продукт</th><th>Нужно всего</th><th>Есть дома</th><th>Докупить</th><th>Цена за ед.</th><th>Стоимость</th></tr></thead>
+                    <thead><tr><th class="checkbox-col">✅</th><th>Продукт</th><th>Нужно всего</th><th>Есть дома</th><th>Докупить</th><th>Цена за ед.</th><th>Стоимость</th><th></th></tr></thead>
                     <tbody id="shoppingTableBody"></tbody>
                     <tfoot id="shoppingTableFoot"></tfoot>
                 </table>
             </div>
             <div class="action-buttons">
                 <button id="clearPurchasedBtn" class="btn-modern">✔️ Снять все галочки</button>
-                <button id="resetShoppingBtn" class="btn-modern btn-danger">🗑️ Сбросить список</button>
             </div>
         </div>
     </div>
@@ -282,7 +266,7 @@
     <div id="tab-recipes" class="tab-content">
         <div class="glass-card">
             <div class="card-header-flex">
-                <h2>📚 Мои рецепты (80+)</h2>
+                <h2 id="recipesTitle">📚 Мои рецепты (CRUD)</h2>
                 <button id="showAddFormBtn" class="btn-modern btn-primary-modern">➕ Добавить рецепт</button>
             </div>
             <div class="category-filter" id="categoryFilter">
@@ -329,9 +313,10 @@
         <div class="freeze-card">💧 Пейте воду за 20 минут до еды</div>
         <div class="freeze-card">❄️ Заморозка: супы до 3 мес, котлеты до 3 мес, ягоды до 6 мес</div></div>
     </div>
-    <footer>✨ При ручном вводе (например "остатки рыбы") кнопка рецепта исчезает — блюдо не добавляет продукты в список покупок.</footer>
+    <footer>✨ Полный CRUD: создавайте, редактируйте, удаляйте меню, продукты и рецепты!</footer>
 </div>
 
+<!-- Модальное окно редактирования рецепта -->
 <div id="editModal" class="modal">
     <div class="modal-content">
         <h3>✏️ Редактировать рецепт</h3>
@@ -351,49 +336,45 @@
     </div>
 </div>
 
+<!-- Модальное окно НАСТРОЕК (дизайн + редактирование названий) -->
+<div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <h3>⚙️ Настройки интерфейса</h3>
+        <div class="settings-group">
+            <h4>🎨 Дизайн</h4>
+            <div class="design-controls" style="display: flex; flex-wrap: wrap; gap: 15px;">
+                <div><label>Основной цвет</label><input type="color" id="settingsPrimaryColor" value="#2c5e3f" style="width: 60px;"></div>
+                <div><label>Акцентный цвет</label><input type="color" id="settingsAccentColor" value="#88b04b" style="width: 60px;"></div>
+                <div><label>Фон (начало)</label><input type="color" id="settingsBgStart" value="#f0f4f8" style="width: 60px;"></div>
+                <div><label>Фон (конец)</label><input type="color" id="settingsBgEnd" value="#e9eef5" style="width: 60px;"></div>
+                <div><label>Скругление</label><select id="settingsBorderRadius"><option value="24px">Малое</option><option value="44px" selected>Среднее</option><option value="60px">Большое</option></select></div>
+            </div>
+        </div>
+        <div class="settings-group">
+            <h4>✏️ Названия вкладок</h4>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div><label>📅 Меню:</label> <input type="text" id="editMenuTabName" placeholder="Название вкладки меню" style="width: 100%;"></div>
+                <div><label>🛒 Список покупок:</label> <input type="text" id="editShoppingTabName" placeholder="Название вкладки списка" style="width: 100%;"></div>
+                <div><label>📚 Рецепты:</label> <input type="text" id="editRecipesTabName" placeholder="Название вкладки рецептов" style="width: 100%;"></div>
+                <div><label>📌 Заголовок меню:</label> <input type="text" id="editMenuHeaderTitle" placeholder="Заголовок раздела меню" style="width: 100%;"></div>
+                <div><label>📌 Заголовок покупок:</label> <input type="text" id="editShoppingHeaderTitle" placeholder="Заголовок раздела покупок" style="width: 100%;"></div>
+                <div><label>📌 Заголовок рецептов:</label> <input type="text" id="editRecipesHeaderTitle" placeholder="Заголовок раздела рецептов" style="width: 100%;"></div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button id="saveSettingsBtn" class="btn-modern btn-primary-modern">💾 Сохранить настройки</button>
+            <button id="closeSettingsBtn" class="btn-modern">Закрыть</button>
+        </div>
+    </div>
+</div>
+
 <script>
-    // ================== ВСЕ ВАШИ РЕЦЕПТЫ (ПОЛНАЯ ВЕРСИЯ, НИЧЕГО НЕ УДАЛЕНО) ==================
+    // ================== БАЗОВЫЕ РЕЦЕПТЫ ==================
     const DEFAULT_RECIPES = [
-        { name: "🥣 Борщ", category: "soup", time: 120, ingredients: [{ name: "свёкла", qty: "2шт" }, { name: "капуста", qty: "200г" }, { name: "картофель", qty: "2шт" }, { name: "говядина на кости", qty: "300-500г" }, { name: "лук", qty: "1шт" }, { name: "морковь", qty: "2шт" }, { name: "томатная паста", qty: "2ст.л" }, { name: "вода", qty: "3л" }, { name: "лавровый лист", qty: "1шт" }, { name: "лимон", qty: "долька" }, { name: "сахар", qty: "1ст.л" }, { name: "зелень", qty: "по вкусу" }, { name: "сметана", qty: "для подачи" }], process: "1. На сухой сковороде обжариваем лук и морковь до румяной корочки.\n2. В кастрюле с мясом заливаем водой, доводим до кипения, снимаем пену и варим бульон 2 часа.\n3. Мелко нарезаем лук, натираем сырую морковь и свёклу, шинкуем капусту.\n4. Обжариваем морковь с луком, добавляем свёклу, томатную пасту, сбрызгиваем лимонным соком, вливаем половник бульона. Тушим 10 минут.\n5. Из бульона достаём мясо, добавляем картофель и капусту - варим до готовности.\n6. Добавляем зажарку со свёклой, солим, добавляем сахар, чеснок.\n7. Накрываем крышкой и даём настояться 10 минут." },
-        { name: "🥣 Суп гороховый", category: "soup", time: 180, ingredients: [{ name: "грудинка копчёная", qty: "500г" }, { name: "горох", qty: "0.5кг" }, { name: "картофель", qty: "4шт" }, { name: "лук", qty: "2шт" }, { name: "морковь", qty: "1шт" }, { name: "вода", qty: "3л" }, { name: "лавровый лист", qty: "2шт" }, { name: "перец горошком", qty: "8шт" }], process: "1. Промываем горох, заливаем водой и оставляем на 4-5 часов.\n2. Добавляем воду, ставим вариться на слабый огонь с грудинкой, лавровым листом и перцем на 2 часа.\n3. Картофель отвариваем отдельно и разминаем.\n4. Грудинку нарезаем кубиками, обжариваем с луком и морковью.\n5. Добавляем картофель и зажарку в суп, варим 5 минут." },
-        { name: "🥣 Суп-пюре из брокколи и цветной капусты", category: "soup", time: 30, ingredients: [{ name: "брокколи", qty: "300г" }, { name: "цветная капуста", qty: "300г" }, { name: "лук", qty: "1шт" }, { name: "картофель", qty: "1шт" }, { name: "овощной/куриный бульон", qty: "500мл" }, { name: "сливки", qty: "100мл" }, { name: "соль, перец", qty: "по вкусу" }, { name: "сухарики", qty: "для подачи" }], process: "1. Лук и картофель обжарьте до мягкости.\n2. Добавьте соцветия капусты и брокколи, залейте бульоном и варите до готовности овощей.\n3. Погружным блендером взбейте суп в пюре.\n4. Влейте сливки, прогрейте, но не кипятите.\n5. Подавайте с сухариками." },
-        { name: "🥣 Крем-суп из шампиньонов", category: "soup", time: 35, ingredients: [{ name: "шампиньоны", qty: "500г" }, { name: "лук", qty: "1шт" }, { name: "картофель", qty: "2шт" }, { name: "сливки", qty: "200мл" }, { name: "бульон/вода", qty: "700мл" }, { name: "чеснок", qty: "2зубчика" }, { name: "тимьян, соль, перец", qty: "по вкусу" }], process: "1. Лук и грибы обжарьте до золотистого цвета.\n2. Добавьте нарезанный кубиками картофель, чеснок и тимьян.\n3. Залейте бульоном и варите до готовности картофеля.\n4. Измельчите блендером в пюре, влейте сливки, прогрейте.\n5. Подавайте с гренками." },
-        { name: "🥣 Солянка", category: "soup", time: 90, ingredients: [{ name: "ребра говяжьи", qty: "400г" }, { name: "огурцы солёные", qty: "400г" }, { name: "лук", qty: "1шт" }, { name: "томатная паста", qty: "1ст.л" }, { name: "колбаса сырокопчёная", qty: "70г" }, { name: "колбаса полукопчёная", qty: "150г" }, { name: "оливки", qty: "100г" }, { name: "каперсы", qty: "40г" }, { name: "лимон, сметана", qty: "для подачи" }], process: "1. Обжарьте рёбрышки в кастрюле.\n2. Залейте водой, доведите до кипения, варите 40 минут.\n3. Обжарьте лук, добавьте натёртые огурцы и томатную пасту.\n4. Достаньте рёбрышки, срежьте мясо и верните в бульон.\n5. Добавьте зажарку, нарезанную колбасу, варите 20 минут.\n6. Добавьте оливки и каперсы, доведите до кипения." },
-        { name: "🥣 Рассольник", category: "soup", time: 90, ingredients: [{ name: "перловая крупа", qty: "125г" }, { name: "лук", qty: "1шт" }, { name: "морковь", qty: "1шт" }, { name: "говядина", qty: "250г" }, { name: "растительное масло", qty: "2ст.л" }, { name: "вода", qty: "3л" }, { name: "томатная паста", qty: "2ст.л" }, { name: "огурцы солёные", qty: "400г" }, { name: "картофель", qty: "3шт" }, { name: "лавровый лист", qty: "1шт" }, { name: "сметана", qty: "для подачи" }], process: "1. Перловку замочите на несколько часов.\n2. Обжарьте мясо, морковь и лук в кастрюле.\n3. Добавьте перловку и воду, варите 20 минут.\n4. Добавьте картофель, варите до мягкости.\n5. Добавьте огурцы и томатную пасту, варите 5 минут." },
-        { name: "🥣 Харчо", category: "soup", time: 90, ingredients: [{ name: "лук", qty: "2шт" }, { name: "грудинка говяжья на кости", qty: "500г" }, { name: "томаты в собственном соку", qty: "750г" }, { name: "рис", qty: "100г" }, { name: "соус ткемали", qty: "80г" }, { name: "грецкие орехи", qty: "60г" }, { name: "чеснок", qty: "4зубчика" }, { name: "кинза", qty: "1пучок" }], process: "1. Обжарьте мясо и лук.\n2. Добавьте томаты, воду, варите 40-45 минут.\n3. Всыпьте рис, добавьте ткемали, варите до готовности риса.\n4. Орехи измельчите с чесноком и лимонным соком.\n5. Добавьте в суп, прогрейте 5 минут." },
-        { name: "🍗 Куриные котлеты", category: "main", time: 30, ingredients: [{ name: "филе куриное", qty: "600гр" }, { name: "лук", qty: "1шт" }, { name: "морковь", qty: "1шт" }, { name: "специи", qty: "по вкусу" }], process: "1. Пропустите курицу через мясорубку.\n2. Добавьте мелко нарезанный лук, натертую морковь, специи.\n3. Сформируйте котлеты и обжарьте до готовности." },
-        { name: "🍝 Вок лапша", category: "main", time: 25, ingredients: [{ name: "филе куриное", qty: "500гр" }, { name: "морковь", qty: "1шт" }, { name: "лук", qty: "1шт" }, { name: "болгарский перец", qty: "1шт" }, { name: "огурец", qty: "1шт" }, { name: "лапша вок", qty: "200гр" }, { name: "соус терияки", qty: "100мл" }, { name: "кунжут", qty: "для посыпки" }, { name: "лук зеленый", qty: "для подачи" }], process: "1. Обжарьте курицу, добавьте овощи.\n2. Отварите лапшу.\n3. Смешайте всё с соусом терияки, посыпьте кунжутом и зелёным луком." },
-        { name: "🍗 Фаршированные перцы", category: "main", time: 60, ingredients: [{ name: "перцы", qty: "4шт" }, { name: "фарш любой", qty: "400гр" }, { name: "лук", qty: "1шт" }, { name: "морковь", qty: "1шт" }, { name: "рис", qty: "150гр" }, { name: "помидоры", qty: "3шт" }, { name: "томаты в собственном соку", qty: "200гр" }], process: "1. Смешайте фарш с рисом и овощами.\n2. Нафаршируйте перцы.\n3. Залейте томатным соусом, запекайте 30-40 минут." },
-        { name: "🍔 Бургеры творожные", category: "main", time: 40, ingredients: [{ name: "творог 5%", qty: "160гр" }, { name: "яйца", qty: "2шт" }, { name: "мука", qty: "4ст.л" }, { name: "разрыхлитель", qty: "5гр" }, { name: "куриная грудка", qty: "200гр" }, { name: "соус терияки", qty: "50мл" }, { name: "помидор, огурец, лук, салат, сыр", qty: "по вкусу" }], process: "1. Смешайте творог, яйца, муку, разрыхлитель.\n2. Сформируйте котлеты, обжарьте.\n3. Приготовьте курицу в соусе терияки.\n4. Соберите бургер с овощами и сыром." },
-        { name: "🍗 Крылья", category: "main", time: 95, ingredients: [{ name: "крылышки", qty: "упаковка" }, { name: "чеснок", qty: "1.5 головки" }, { name: "соевый соус", qty: "6ст.л" }, { name: "паприка", qty: "по вкусу" }, { name: "мёд", qty: "1ст.л" }, { name: "соус барбекю", qty: "2ст.л" }, { name: "кетчуп", qty: "2ст.л" }], process: "1. Замаринуйте крылья.\n2. Запекайте 40 минут при 150°C, переверните и ещё 40 минут.\n3. Смажьте соусом и запекайте 10-15 минут при 170°C." },
-        { name: "🍞 Булочки для бургера", category: "dessert", time: 60, ingredients: [{ name: "молоко", qty: "180 мл" }, { name: "дрожжи", qty: "6 гр" }, { name: "сахар", qty: "1.5 ст.л" }, { name: "соль", qty: "1 ч.л" }, { name: "сливочное масло", qty: "20 гр" }, { name: "мука", qty: "300 гр" }], process: "1. Смешайте все ингредиенты, разделите на 6 частей.\n2. Оставьте на 40 минут, примните, смажьте яйцом, посыпьте кунжутом.\n3. Выпекайте 12-15 минут при 190°C." },
-        { name: "🍖 Ребра", category: "main", time: 100, ingredients: [{ name: "ребра свиные", qty: "1 кг" }, { name: "яблочное пюре", qty: "100г" }, { name: "томатный соус", qty: "100г" }, { name: "сахар", qty: "1 ст.л" }, { name: "соевый соус", qty: "3 ст.л" }, { name: "соль", qty: "щепотка" }, { name: "перец ч.м.", qty: "0.3 ч.л" }, { name: "корица молотая", qty: "0.5 ч.л" }, { name: "порошок чесночный", qty: "0.5 ч.л" }, { name: "паприка копченая", qty: "1 ч.л" }, { name: "лимонный сок", qty: "1-2 ст.л" }], process: "1. Смешайте все ингредиенты для маринада.\n2. Замаринуйте ребра на 2-3 часа.\n3. Переложите ребра в форму для запекания, полейте маринадом.\n4. Накройте пищевой фольгой.\n5. Запекайте 1 час при температуре 180-190°C.\n6. Снимите фольгу, включите конвекцию.\n7. Запекайте еще 30 минут до румяной корочки.\n8. Время от времени поливайте ребра выделившимся соком." },
-        { name: "🍕 Пицца на слоеном тесте", category: "main", time: 25, ingredients: [{ name: "слоеное тесто", qty: "1 пласт" }, { name: "куриное филе", qty: "150 г" }, { name: "помидор", qty: "1 шт" }, { name: "перец болгарский", qty: "0.5 шт" }, { name: "сыр", qty: "50 г" }], process: "1. Тесто раскатать, подрумянить 5 минут при 180°C.\n2. Обжарьте курицу.\n3. Намажьте томатную пасту, выложите начинку, посыпьте сыром.\n4. Выпекайте 7-10 минут." },
-        { name: "🐟 Рыба запеченная с лимоном", category: "main", time: 25, ingredients: [{ name: "рыба", qty: "2 шт" }, { name: "лимон", qty: "1 шт" }, { name: "чеснок", qty: "2 зубчика" }, { name: "оливковое масло", qty: "2 ст.л" }, { name: "прованские травы", qty: "по вкусу" }], process: "1. Посолите, поперчите рыбу.\n2. Выложите на противень, сверху лимон и чеснок.\n3. Запекайте 15-20 минут при 200°C." },
-        { name: "🦐 Креветки в чесночном соусе", category: "main", time: 15, ingredients: [{ name: "креветки", qty: "500 г" }, { name: "чеснок", qty: "4 зубчика" }, { name: "сливки", qty: "200 мл" }, { name: "сыр пармезан", qty: "50 г" }], process: "1. Обжарьте креветки.\n2. Обжарьте чеснок, влейте сливки, добавьте сыр.\n3. Верните креветки, прогрейте минуту." },
-        { name: "🍗 Курица в сливочном соусе", category: "main", time: 45, ingredients: [{ name: "курица", qty: "800 г" }, { name: "сливки 20%", qty: "300 мл" }, { name: "чеснок", qty: "3 зубчика" }, { name: "хмели-сунели", qty: "0.5 ч.л" }], process: "1. Замаринуйте курицу с паприкой.\n2. Обжарьте курицу.\n3. Добавьте чеснок и сливки, тушите 20-25 минут." },
-        { name: "🥔 Крошка-картошка", category: "main", time: 60, ingredients: [{ name: "картошка", qty: "5-6 шт" }, { name: "масло сливочное", qty: "50г" }, { name: "сыр", qty: "100г" }], process: "1. Нарежьте картофель.\n2. Запекайте 40-70 минут при 190°C.\n3. Разомните края, добавьте масло, сыр, начинку." },
-        { name: "🥬 Ленивые голубцы", category: "main", time: 45, ingredients: [{ name: "фарш", qty: "500г" }, { name: "капуста", qty: "250г" }, { name: "рис", qty: "0.5 стакана" }, { name: "лук", qty: "1 шт" }, { name: "морковь", qty: "1 шт" }, { name: "томатная паста", qty: "140г" }], process: "1. Отварите рис.\n2. Смешайте фарш, овощи, рис и капусту.\n3. Сформируйте котлетки.\n4. Залейте томатным соусом, запекайте 30 минут при 180°C." },
-        { name: "🍝 Лазанья быстрая", category: "main", time: 60, ingredients: [{ name: "листы лазаньи", qty: "9 шт" }, { name: "фарш", qty: "400 г" }, { name: "творог", qty: "250 г" }, { name: "томатная паста", qty: "2 ст.л" }, { name: "сыр", qty: "150 г" }], process: "1. Приготовьте мясной соус.\n2. Смешайте творог с яйцом и сыром.\n3. Соберите лазанью слоями.\n4. Запекайте 25 минут под фольгой, затем 10-15 минут без фольги." },
-        { name: "🐟 Рыба в кокосовом соусе", category: "main", time: 25, ingredients: [{ name: "белая рыба", qty: "400 г" }, { name: "морковь", qty: "1 шт" }, { name: "перец сладкий", qty: "1 шт" }, { name: "кокосовое молоко", qty: "200 мл" }, { name: "соевый соус", qty: "1-2 ст.л" }], process: "1. Обжарьте морковь и перец.\n2. Смешайте кокосовое молоко с приправами.\n3. Добавьте рыбу, томите 10-12 минут." },
-        { name: "🍳 Омлет с томатами", category: "breakfast", time: 10, ingredients: [{ name: "яйца", qty: "3 шт" }, { name: "молоко", qty: "3 ст.л" }, { name: "томаты", qty: "1-2 шт" }], process: "1. Взбейте яйца с молоком.\n2. Вылейте на сковороду, добавьте томаты.\n3. Жарьте до готовности." },
-        { name: "🥞 Драники", category: "breakfast", time: 20, ingredients: [{ name: "картофель", qty: "2 шт" }, { name: "лук", qty: "0.5 шт" }, { name: "яйцо", qty: "1 шт" }, { name: "мука", qty: "10 г" }], process: "1. Натрите картофель и лук.\n2. Добавьте яйцо и муку.\n3. Обжарьте на сковороде." },
-        { name: "🍳 Шакшука", category: "breakfast", time: 15, ingredients: [{ name: "яйца", qty: "3 шт" }, { name: "кабачок", qty: "0.5 шт" }, { name: "лук", qty: "0.5 шт" }, { name: "томатная паста", qty: "2 ст.л" }, { name: "моцарелла", qty: "50 г" }], process: "1. Обжарьте кабачок и лук.\n2. Добавьте томатную пасту.\n3. Сделайте углубления, разбейте яйца.\n4. Посыпьте сыром, готовьте до схватывания белков." },
-        { name: "🧇 Творожные вафли", category: "breakfast", time: 15, ingredients: [{ name: "творог", qty: "100 г" }, { name: "яйца", qty: "2 шт" }, { name: "мука", qty: "2 ст.л" }, { name: "масло сливочное", qty: "30 г" }, { name: "разрыхлитель", qty: "5 г" }], process: "1. Смешайте все ингредиенты.\n2. Выпекайте в вафельнице до золотистого цвета." },
-        { name: "🥞 Оладушки", category: "breakfast", time: 15, ingredients: [{ name: "молоко", qty: "100 г" }, { name: "яйцо", qty: "1 шт" }, { name: "мука", qty: "на глаз" }, { name: "разрыхлитель", qty: "5 г" }, { name: "вишня замороженная", qty: "для начинки" }], process: "1. Смешайте ингредиенты.\n2. Жарьте на сковороде.\n3. Подавайте с йогуртом и сахарной пудрой." },
-        { name: "🧇 Кабачковые вафли", category: "breakfast", time: 15, ingredients: [{ name: "кабачок", qty: "0.5 шт" }, { name: "яйца", qty: "2 шт" }, { name: "сливочное масло", qty: "30 г" }, { name: "мука", qty: "3 ст.л" }, { name: "разрыхлитель", qty: "5 г" }], process: "1. Натрите кабачок.\n2. Смешайте все ингредиенты.\n3. Выпекайте в вафельнице." },
-        { name: "🧇 Классические вафли", category: "breakfast", time: 15, ingredients: [{ name: "масло сливочное", qty: "60 г" }, { name: "яйца", qty: "2 шт" }, { name: "молоко", qty: "120 г" }, { name: "разрыхлитель", qty: "7 г" }, { name: "мука", qty: "120 г" }, { name: "сахар", qty: "50 г" }], process: "1. Смешайте ингредиенты.\n2. Выпекайте в вафельнице." },
-        { name: "🥣 Рисовая каша", category: "breakfast", time: 20, ingredients: [{ name: "рис", qty: "1.5 пакетика" }, { name: "молоко", qty: "по вкусу" }, { name: "соль", qty: "по вкусу" }, { name: "яблоко", qty: "для украшения" }, { name: "корица, орехи", qty: "по вкусу" }], process: "1. Сварите рис на молоке.\n2. Подавайте с яблоком, корицей, орехами и сахарной пудрой." },
-        { name: "🧇 Шоколадные вафли", category: "breakfast", time: 15, ingredients: [{ name: "банан", qty: "1 шт" }, { name: "овсянка", qty: "150 г" }, { name: "молоко", qty: "100 мл" }, { name: "яйцо", qty: "1 шт" }, { name: "какао", qty: "1 ст.л" }], process: "1. Все ингредиенты через блендер.\n2. Выпекайте в вафельнице." },
-        { name: "🍰 Чизкейк", category: "dessert", time: 90, ingredients: [{ name: "печенье", qty: "300г" }, { name: "масло сливочное", qty: "120г" }, { name: "творожный сыр", qty: "600г" }, { name: "сахарная пудра", qty: "100г" }, { name: "яйца", qty: "3шт" }, { name: "сливки 35%", qty: "150мл" }], process: "1. Сделайте основу из печенья и масла, выпекайте 10 минут.\n2. Смешайте сыр, пудру, яйца, сливки.\n3. Выпекайте на водяной бане 1 час 15 минут при 160°C.\n4. Охладите 6-8 часов." },
-        { name: "🍫 Шоколадный чизкейк", category: "dessert", time: 70, ingredients: [{ name: "творожный сыр", qty: "650 г" }, { name: "сливки 33%", qty: "350 мл" }, { name: "яйца", qty: "5 шт" }, { name: "кукурузный крахмал", qty: "30 г" }, { name: "сахар", qty: "150 г" }, { name: "какао", qty: "50 г" }, { name: "соль", qty: "0.5 ч.л" }], process: "1. Все смешайте.\n2. Выпекайте в духовке 1 час при 180°C." },
-        { name: "🍰 Медовик", category: "dessert", time: 120, ingredients: [{ name: "яйца", qty: "2 шт" }, { name: "сахар", qty: "120 г" }, { name: "мёд", qty: "80 г" }, { name: "растительное масло", qty: "50 г" }, { name: "сода", qty: "1.5 ч.л" }, { name: "мука", qty: "350 г" }, { name: "сметана", qty: "900 г" }], process: "1. Замесите тесто, разделите на 8-10 частей.\n2. Раскатайте коржи, выпекайте 5-8 минут при 180°C.\n3. Промажьте сметанным кремом.\n4. Настаивайте 6-8 часов." },
-        { name: "🍰 Рулет меренговый", category: "dessert", time: 50, ingredients: [{ name: "белок", qty: "5-6 шт" }, { name: "сахарная пудра", qty: "125 г" }, { name: "кукурузный крахмал", qty: "25 г" }, { name: "творожный сыр", qty: "400 г" }, { name: "сливки", qty: "200 мл" }], process: "1. Взбейте белки с пудрой, добавьте крахмал.\n2. Выпекайте 20 минут при 150°C, затем 8-10 минут до корочки.\n3. Приготовьте крем из сыра и сливок.\n4. Скрутите рулет." },
-        { name: "🍪 Печенье с шоколадной крошкой", category: "dessert", time: 25, ingredients: [{ name: "яйца", qty: "2 шт" }, { name: "сахар", qty: "100 г" }, { name: "соль, ваниль", qty: "по вкусу" }, { name: "растительное масло", qty: "100 г" }, { name: "крахмал", qty: "20 г" }, { name: "разрыхлитель", qty: "1 ч.л" }, { name: "овсяные хлопья", qty: "170 г" }, { name: "цедра апельсина", qty: "по вкусу" }, { name: "тёмный шоколад", qty: "100 г" }], process: "1. Взбейте яйца с сахаром, солью и ванилью.\n2. Добавьте масло, крахмал, разрыхлитель, хлопья, шоколад.\n3. Выпекайте 11-14 минут при 180°C." },
-        { name: "🍌 Банановый хлеб", category: "dessert", time: 50, ingredients: [{ name: "бананы", qty: "2 шт" }, { name: "мука", qty: "160 г" }, { name: "разрыхлитель", qty: "2 ч.л" }, { name: "яйцо", qty: "1 шт" }, { name: "соль", qty: "щепотка" }, { name: "сахар коричневый", qty: "80 г" }, { name: "сливочное масло", qty: "60 г" }], process: "1. Разомните бананы вилкой.\n2. Смешайте все ингредиенты.\n3. Выпекайте 40 минут при 180°C." },
-        { name: "🍋 Лимонный поссет", category: "dessert", time: 15, ingredients: [{ name: "лимон", qty: "4 шт" }, { name: "сахарная пудра", qty: "2 ст.л" }, { name: "ванилин", qty: "0.5 ч.л" }, { name: "сливки 33%", qty: "300 мл" }], process: "1. Лимоны разрежьте, удалите мякоть, выжмите сок.\n2. Сливки, сахар, ванилин, цедру смешайте, доведите до кипения.\n3. Добавьте сок лимона.\n4. Разлейте в формочки, охладите 2-3 часа." },
-        { name: "🥐 Творожные рогалики", category: "dessert", time: 60, ingredients: [{ name: "творог", qty: "300 г" }, { name: "сливочное масло", qty: "130 г" }, { name: "сахар", qty: "100 г" }, { name: "яйцо", qty: "1 шт" }, { name: "мука", qty: "330 г" }, { name: "разрыхлитель", qty: "1 ч.л" }], process: "1. Растопите сливочное масло, смешайте все.\n2. Дайте отдохнуть 1 час.\n3. Раскатайте и запеките." },
-        { name: "🍋 Лимонный курд", category: "dessert", time: 20, ingredients: [{ name: "желтки", qty: "3 шт" }, { name: "лимонный сок", qty: "90 мл" }, { name: "сахар", qty: "120 г" }, { name: "сливочное масло", qty: "45 г" }, { name: "кукурузный крахмал", qty: "1 ст.л" }, { name: "цедра лимона", qty: "0.5 шт" }], process: "1. Положите в сотейник все ингредиенты кроме масла.\n2. Готовьте на среднем огне до загустения.\n3. Вмешайте сливочное масло.\n4. Накройте пленкой и охладите." }
+        { name: "🥣 Борщ", category: "soup", time: 120, ingredients: [{ name: "свёкла", qty: "2шт" }, { name: "капуста", qty: "200г" }, { name: "картофель", qty: "2шт" }, { name: "говядина", qty: "400г" }], process: "1. Варите бульон 2 часа.\n2. Добавьте картофель и капусту.\n3. Добавьте зажарку со свёклой." },
+        { name: "🍗 Куриные котлеты", category: "main", time: 30, ingredients: [{ name: "филе куриное", qty: "600гр" }, { name: "лук", qty: "1шт" }, { name: "морковь", qty: "1шт" }], process: "1. Пропустите через мясорубку.\n2. Сформируйте котлеты.\n3. Обжарьте до готовности." },
+        { name: "🍳 Омлет с томатами", category: "breakfast", time: 10, ingredients: [{ name: "яйца", qty: "3шт" }, { name: "молоко", qty: "3ст.л" }, { name: "томаты", qty: "2шт" }], process: "1. Взбейте яйца с молоком.\n2. Вылейте на сковороду.\n3. Добавьте томаты." },
+        { name: "🍰 Чизкейк", category: "dessert", time: 90, ingredients: [{ name: "печенье", qty: "300г" }, { name: "творожный сыр", qty: "600г" }, { name: "яйца", qty: "3шт" }], process: "1. Сделайте основу.\n2. Приготовьте начинку.\n3. Выпекайте на водяной бане." }
     ];
 
     let allRecipes = [];
@@ -404,9 +385,76 @@
     let currentCategoryFilter = "all";
     let editingIndex = null;
 
-    const STORAGE_RECIPES = "nutriplan_recipes_complete_v3";
-    const STORAGE_SHOPPING = "nutriplan_shopping_complete_v3";
-    const STORAGE_MENU = "nutriplan_menu_complete_v3";
+    const STORAGE_RECIPES = "nutriplan_recipes_crud";
+    const STORAGE_SHOPPING = "nutriplan_shopping_crud";
+    const STORAGE_MENU = "nutriplan_menu_crud";
+    const STORAGE_SETTINGS = "nutriplan_settings";
+
+    // Загрузка и сохранение настроек
+    function loadSettings() {
+        let settings = localStorage.getItem(STORAGE_SETTINGS);
+        if(settings) {
+            try {
+                let s = JSON.parse(settings);
+                document.getElementById("settingsPrimaryColor").value = s.primaryColor || "#2c5e3f";
+                document.getElementById("settingsAccentColor").value = s.accentColor || "#88b04b";
+                document.getElementById("settingsBgStart").value = s.bgStart || "#f0f4f8";
+                document.getElementById("settingsBgEnd").value = s.bgEnd || "#e9eef5";
+                document.getElementById("settingsBorderRadius").value = s.borderRadius || "44px";
+                document.getElementById("editMenuTabName").value = s.menuTabName || "📅 Меню";
+                document.getElementById("editShoppingTabName").value = s.shoppingTabName || "🛒 Список покупок";
+                document.getElementById("editRecipesTabName").value = s.recipesTabName || "📚 Рецепты";
+                document.getElementById("editMenuHeaderTitle").value = s.menuHeaderTitle || "🗓️ Меню на период";
+                document.getElementById("editShoppingHeaderTitle").value = s.shoppingHeaderTitle || "🛒 Список покупок";
+                document.getElementById("editRecipesHeaderTitle").value = s.recipesHeaderTitle || "📚 Мои рецепты (CRUD)";
+                applyUISettings(s);
+            } catch(e) {}
+        } else {
+            document.getElementById("editMenuTabName").value = "📅 Меню";
+            document.getElementById("editShoppingTabName").value = "🛒 Список покупок";
+            document.getElementById("editRecipesTabName").value = "📚 Рецепты";
+            document.getElementById("editMenuHeaderTitle").value = "🗓️ Меню на период";
+            document.getElementById("editShoppingHeaderTitle").value = "🛒 Список покупок";
+            document.getElementById("editRecipesHeaderTitle").value = "📚 Мои рецепты (CRUD)";
+        }
+    }
+    
+    function saveUISettings() {
+        let settings = {
+            primaryColor: document.getElementById("settingsPrimaryColor").value,
+            accentColor: document.getElementById("settingsAccentColor").value,
+            bgStart: document.getElementById("settingsBgStart").value,
+            bgEnd: document.getElementById("settingsBgEnd").value,
+            borderRadius: document.getElementById("settingsBorderRadius").value,
+            menuTabName: document.getElementById("editMenuTabName").value,
+            shoppingTabName: document.getElementById("editShoppingTabName").value,
+            recipesTabName: document.getElementById("editRecipesTabName").value,
+            menuHeaderTitle: document.getElementById("editMenuHeaderTitle").value,
+            shoppingHeaderTitle: document.getElementById("editShoppingHeaderTitle").value,
+            recipesHeaderTitle: document.getElementById("editRecipesHeaderTitle").value
+        };
+        localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings));
+        applyUISettings(settings);
+        document.getElementById("settingsModal").style.display = "none";
+        alert("Настройки сохранены!");
+    }
+    
+    function applyUISettings(s) {
+        let root = document.documentElement;
+        root.style.setProperty('--primary-color', s.primaryColor);
+        root.style.setProperty('--accent-color', s.accentColor);
+        root.style.setProperty('--bg-gradient-start', s.bgStart);
+        root.style.setProperty('--bg-gradient-end', s.bgEnd);
+        root.style.setProperty('--border-radius-card', s.borderRadius);
+        root.style.setProperty('--border-radius-btn', s.borderRadius);
+        
+        document.getElementById("tabMenuBtn").innerHTML = s.menuTabName;
+        document.getElementById("tabShoppingBtn").innerHTML = s.shoppingTabName;
+        document.getElementById("tabRecipesBtn").innerHTML = s.recipesTabName;
+        document.getElementById("menuTitle").innerHTML = s.menuHeaderTitle;
+        document.getElementById("shoppingTitle").innerHTML = s.shoppingHeaderTitle;
+        document.getElementById("recipesTitle").innerHTML = s.recipesHeaderTitle;
+    }
 
     function loadRecipes() {
         let stored = localStorage.getItem(STORAGE_RECIPES);
@@ -483,14 +531,43 @@
     function saveMenuToLocal() { localStorage.setItem(STORAGE_MENU, JSON.stringify(currentMenu)); }
     function loadMenuFromLocal() { let m = localStorage.getItem(STORAGE_MENU); if(m) { try { currentMenu = JSON.parse(m); renderMenuUI(); updateShoppingListFromMenu(); } catch(e){} } }
     
+    function addNewDay() {
+        let newDayNum = currentMenu.length + 1;
+        currentMenu.push({
+            day: newDayNum,
+            breakfast: { name: "❌ Новое блюдо", time: 0, ingredients: [], process: "", isManual: true, customText: "❌ Новое блюдо" },
+            lunch: { name: "❌ Новое блюдо", time: 0, ingredients: [], process: "", isManual: true, customText: "❌ Новое блюдо" },
+            dinner: { name: "❌ Новое блюдо", time: 0, ingredients: [], process: "", isManual: true, customText: "❌ Новое блюдо" },
+            snack: { name: "❌ Новое блюдо", time: 0, ingredients: [], process: "", isManual: true, customText: "❌ Новое блюдо" },
+            dessert: { name: "❌ Новое блюдо", time: 0, ingredients: [], process: "", isManual: true, customText: "❌ Новое блюдо" }
+        });
+        saveMenuToLocal();
+        renderMenuUI();
+        updateShoppingListFromMenu();
+    }
+    
+    function deleteDay(dayNum) {
+        if(confirm(`Удалить день ${dayNum}?`)) {
+            currentMenu = currentMenu.filter(d => d.day !== dayNum);
+            for(let i=0; i<currentMenu.length; i++) currentMenu[i].day = i+1;
+            saveMenuToLocal();
+            renderMenuUI();
+            updateShoppingListFromMenu();
+        }
+    }
+    
     function renderMenuUI() {
         let container = document.getElementById("menuContainer");
         if(!allRecipes.length) { container.innerHTML = "<div style='padding:20px;text-align:center'>⚠️ Нет рецептов</div>"; return; }
-        if(!currentMenu.length) { container.innerHTML = "<div style='padding:20px;text-align:center'>Нажмите «Сгенерировать меню»</div>"; return; }
-        let displayMenu = currentMenu.slice(0, 7);
-        let html = `<div style="margin-bottom: 12px; font-size: 0.8rem; color: #666;">📌 Показаны первые 7 дней из ${currentMenu.length}</div>`;
-        for(let day of displayMenu){
-            html += `<div class="day-elegant"><div class="day-title-lg">📅 День ${day.day}</div><div class="meals-grid">`;
+        if(!currentMenu.length) { container.innerHTML = "<div style='padding:20px;text-align:center'>Нажмите «Сгенерировать меню» или «Добавить день»</div>"; return; }
+        let html = "";
+        for(let day of currentMenu){
+            html += `<div class="day-elegant">
+                <div class="day-header">
+                    <div class="day-title-lg">📅 День ${day.day}</div>
+                    <button class="delete-day-btn" data-day="${day.day}">🗑️ Удалить день</button>
+                </div>
+                <div class="meals-grid">`;
             let meals = [{ type: "breakfast", title: "🍳 Завтрак", rec: day.breakfast },{ type: "lunch", title: "🥣 Обед", rec: day.lunch },{ type: "dinner", title: "🍗 Ужин", rec: day.dinner },{ type: "snack", title: "🍎 Перекус", rec: day.snack },{ type: "dessert", title: "🍰 Десерт", rec: day.dessert }];
             for(let meal of meals) {
                 let rec = meal.rec;
@@ -521,18 +598,16 @@
                 }
             };
         });
-        
         document.querySelectorAll(".show-process-btn").forEach(btn => { btn.onclick = () => { let p = btn.dataset.process, n = btn.dataset.name; alert(`🍽️ ${n}\n\n${p ? p.replace(/\\n/g, '\n') : "Нет описания"}`); }; });
         document.querySelectorAll(".edit-icon").forEach(btn=>{ btn.onclick = ()=>{ let d=parseInt(btn.dataset.day); let m=btn.dataset.meal; replaceMeal(d,m); }; });
+        document.querySelectorAll(".delete-day-btn").forEach(btn=>{ btn.onclick = ()=>{ let d=parseInt(btn.dataset.day); deleteDay(d); }; });
     }
     
     function replaceMeal(day, mealType) {
         let allRecipesList = allRecipes;
         if(!allRecipesList.length) { alert("Нет рецептов!"); return; }
-        
         let catNames = { breakfast: "🍳 Завтрак", soup: "🥣 Суп", main: "🍗 Второе", dessert: "🍰 Десерт", snack: "🍎 Перекус" };
         let list = allRecipesList.map((r,i)=>`${i}: ${r.name} [${catNames[r.category] || r.category}]`).join("\n");
-        
         let userInput = prompt(`Выберите блюдо из ЛЮБОЙ категории (введите номер 0-${allRecipesList.length-1}):\n${list}\n\nИЛИ просто введите свой текст (например: "остатки борща"):`);
         if(userInput !== null) {
             let dayObj = currentMenu.find(d=>d.day===day);
@@ -544,15 +619,7 @@
                     newRecipe.isManual = false;
                     dayObj[mealType] = newRecipe;
                 } else if(userInput.trim().length > 0) {
-                    let customMeal = { 
-                        name: userInput.trim(), 
-                        category: "manual", 
-                        time: 0, 
-                        ingredients: [], 
-                        process: "", 
-                        customText: userInput.trim(),
-                        isManual: true
-                    };
+                    let customMeal = { name: userInput.trim(), category: "manual", time: 0, ingredients: [], process: "", customText: userInput.trim(), isManual: true };
                     dayObj[mealType] = customMeal;
                 }
                 saveMenuToLocal();
@@ -607,32 +674,25 @@
         shoppingItems = newItems; saveShoppingList(); renderShoppingTable(); updateShoppingPeriodInfo();
     }
     
+    function importFromMenuToShopping() {
+        updateShoppingListFromMenu();
+        alert("Продукты из меню добавлены в список покупок!");
+    }
+    
     function updateShoppingPeriodInfo() { let days=getDaysCount(currentShoppingPeriod), text=currentShoppingPeriod==="week"?"Неделю":(currentShoppingPeriod==="2weeks"?"2 недели":"Месяц"); document.getElementById("shoppingStats").innerHTML = `📊 ${shoppingItems.length} продуктов | 🛒 На ${text} (${days} дней)`; }
     function saveShoppingList() { localStorage.setItem(STORAGE_SHOPPING, JSON.stringify(shoppingItems)); }
     function loadShoppingList() { let s=localStorage.getItem(STORAGE_SHOPPING); if(s){ try{ shoppingItems=JSON.parse(s); renderShoppingTable(); updateShoppingPeriodInfo(); } catch(e){} } else { if(currentMenu.length) updateShoppingListFromMenu(); else shoppingItems=[]; renderShoppingTable(); } }
     
-    // Функция добавления продукта вручную
     function addManualProduct() {
         let name = document.getElementById("newProductName").value.trim();
         if(!name) { alert("Введите название продукта"); return; }
         let qty = parseFloat(document.getElementById("newProductQty").value) || 1;
         let unit = document.getElementById("newProductUnit").value;
         let price = parseFloat(document.getElementById("newProductPrice").value) || 0;
-        
-        let newItem = {
-            id: Date.now() + Math.random(),
-            name: name,
-            totalNeeded: qty,
-            unit: unit,
-            displayNeeded: `${qty} ${unit}`,
-            haveAtHome: 0,
-            price: price,
-            purchased: false
-        };
+        let newItem = { id: Date.now() + Math.random(), name: name, totalNeeded: qty, unit: unit, displayNeeded: `${qty} ${unit}`, haveAtHome: 0, price: price, purchased: false };
         shoppingItems.push(newItem);
         saveShoppingList();
         renderShoppingTable();
-        
         document.getElementById("newProductName").value = "";
         document.getElementById("newProductQty").value = "1";
         document.getElementById("newProductPrice").value = "0";
@@ -640,59 +700,50 @@
         alert("Продукт добавлен в список!");
     }
     
+    function deleteProduct(idx) {
+        if(confirm("Удалить продукт из списка?")) {
+            shoppingItems.splice(idx,1);
+            saveShoppingList();
+            renderShoppingTable();
+        }
+    }
+    
     function renderShoppingTable() {
         let tbody=document.getElementById("shoppingTableBody"), tfoot=document.getElementById("shoppingTableFoot");
         if(!tbody) return;
-        if(!shoppingItems.length){ tbody.innerHTML="<tr><td colspan='7'>Нет продуктов. Добавьте продукт через кнопку ➕ или обновите меню.</td></tr>"; tfoot.innerHTML=""; return; }
+        if(!shoppingItems.length){ tbody.innerHTML="<tr><td colspan='8'>Нет продуктов. Добавьте продукт через кнопку ➕ или импортируйте из меню.</td></tr>"; tfoot.innerHTML=""; return; }
         let html="", totalCost=0, purchasedCount=0;
-        shoppingItems.forEach((item,idx)=>{ let needBuy=Math.max(0,item.totalNeeded-item.haveAtHome), cost=needBuy*item.price; totalCost+=cost; if(item.purchased) purchasedCount++; html+=`<tr class="${item.purchased?'purchased-row':''}"><td><input type="checkbox" class="purchase-checkbox" data-idx="${idx}" ${item.purchased?"checked":""}></td><td class="product-name-col">${item.name}</td><td><input type="number" class="total-needed-input" data-idx="${idx}" value="${item.totalNeeded}" step="0.1" style="width:80px;"> ${item.unit}</td><td><input type="number" class="have-input" data-idx="${idx}" value="${item.haveAtHome}" step="0.1" style="width:70px;"> ${item.unit}</td><td><span class="need-buy">${Math.round(needBuy*10)/10} ${item.unit}</span></td><td><input type="number" class="price-input" data-idx="${idx}" value="${item.price}" step="1" style="width:80px;"> ₽/${item.unit}</td><td>${Math.round(cost)} ₽</td></tr>`; });
-        tbody.innerHTML=html; tfoot.innerHTML=`<tr class="total-row"><td colspan="6" style="text-align:right;">💰 Итого: <tr><td><strong>${Math.round(totalCost)} ₽</strong></td></tr>`;
+        shoppingItems.forEach((item,idx)=>{ let needBuy=Math.max(0,item.totalNeeded-item.haveAtHome), cost=needBuy*item.price; totalCost+=cost; if(item.purchased) purchasedCount++; html+=`<tr class="${item.purchased?'purchased-row':''}"><td><input type="checkbox" class="purchase-checkbox" data-idx="${idx}" ${item.purchased?"checked":""}></td><td class="product-name-col">${item.name}</td><td><input type="number" class="total-needed-input" data-idx="${idx}" value="${item.totalNeeded}" step="0.1" style="width:80px;"> ${item.unit}</td><td><input type="number" class="have-input" data-idx="${idx}" value="${item.haveAtHome}" step="0.1" style="width:70px;"> ${item.unit}</td><td class="need-buy">${Math.round(needBuy*10)/10} ${item.unit}</td><td><input type="number" class="price-input" data-idx="${idx}" value="${item.price}" step="1" style="width:80px;"> ₽/${item.unit}</td><td>${Math.round(cost)} ₽</span></td><td><button class="delete-product-btn" data-idx="${idx}">🗑️</button></td></tr>`; });
+        tbody.innerHTML=html; tfoot.innerHTML=`<tr class="total-row"><td colspan="7" style="text-align:right;">💰 Итого: </td><td><strong>${Math.round(totalCost)} ₽</strong></td></tr>`;
         document.querySelectorAll(".total-needed-input").forEach(inp=>{ inp.onchange=()=>{ let i=parseInt(inp.dataset.idx); if(!isNaN(i)){ shoppingItems[i].totalNeeded=parseFloat(inp.value)||0; saveShoppingList(); renderShoppingTable(); } }; });
         document.querySelectorAll(".purchase-checkbox").forEach(cb=>{ cb.onchange=()=>{ let i=parseInt(cb.dataset.idx); if(!isNaN(i)){ shoppingItems[i].purchased=cb.checked; saveShoppingList(); renderShoppingTable(); } }; });
         document.querySelectorAll(".have-input").forEach(inp=>{ inp.onchange=()=>{ let i=parseInt(inp.dataset.idx); if(!isNaN(i)){ shoppingItems[i].haveAtHome=parseFloat(inp.value)||0; saveShoppingList(); renderShoppingTable(); } }; });
         document.querySelectorAll(".price-input").forEach(inp=>{ inp.onchange=()=>{ let i=parseInt(inp.dataset.idx); if(!isNaN(i)){ shoppingItems[i].price=parseFloat(inp.value)||0; saveShoppingList(); renderShoppingTable(); } }; });
+        document.querySelectorAll(".delete-product-btn").forEach(btn=>{ btn.onclick=()=>{ let i=parseInt(btn.dataset.idx); if(!isNaN(i)) deleteProduct(i); }; });
         updateShoppingPeriodInfo();
     }
     
     function clearPurchased() { shoppingItems.forEach(i=>i.purchased=false); saveShoppingList(); renderShoppingTable(); }
-    function resetShoppingList() { if(confirm("Сбросить список?")) updateShoppingListFromMenu(); }
 
     function renderRecipesList() {
         let container = document.getElementById("recipesList");
         if(!container) return;
         let filtered = currentCategoryFilter === "all" ? allRecipes : allRecipes.filter(r => r.category === currentCategoryFilter);
         let catNames = { breakfast: "🍳 Завтрак", soup: "🥣 Суп", main: "🍗 Второе", dessert: "🍰 Десерт", snack: "🍎 Перекус" };
-        
         container.innerHTML = filtered.map((rec, idx) => {
             let originalIdx = allRecipes.findIndex(r => r.name === rec.name && r.category === rec.category);
-            let number = originalIdx;
-            return `<div class="recipe-item">
-                <div class="recipe-header">
-                    <div><span class="recipe-number">#${number}</span><span class="recipe-name">${rec.name}</span></div>
-                    <span class="recipe-time">⏱️ ${rec.time} мин</span>
-                </div>
-                <div><span class="recipe-category-tag">${catNames[rec.category]}</span></div>
-                <div class="recipe-ingredients">📝 ${rec.ingredients.map(i=>`${i.name} ${i.qty}`).join(', ')}</div>
-                <div class="recipe-process-preview">📖 ${rec.process ? rec.process.substring(0,150)+(rec.process.length>150?"...":"") : "Нет описания"}</div>
-                <div class="recipe-actions">
-                    <button class="btn-modern btn-sm edit-recipe" data-idx="${originalIdx}">✏️ Редактировать</button>
-                    <button class="btn-modern btn-danger btn-sm del-recipe" data-idx="${originalIdx}">🗑️ Удалить</button>
-                </div>
-            </div>`;
+            return `<div class="recipe-item"><div class="recipe-header"><div><span class="recipe-number">#${originalIdx}</span><span class="recipe-name">${rec.name}</span></div><span class="recipe-time">⏱️ ${rec.time} мин</span></div><div><span class="recipe-category-tag">${catNames[rec.category]}</span></div><div class="recipe-ingredients">📝 ${rec.ingredients.map(i=>`${i.name} ${i.qty}`).join(', ')}</div><div class="recipe-process-preview">📖 ${rec.process ? rec.process.substring(0,150)+(rec.process.length>150?"...":"") : "Нет описания"}</div><div class="recipe-actions"><button class="btn-modern btn-sm edit-recipe" data-idx="${originalIdx}">✏️ Ред.</button> <button class="btn-modern btn-danger btn-sm del-recipe" data-idx="${originalIdx}">🗑️ Удалить</button></div></div>`;
         }).join('');
-        
         document.querySelectorAll(".edit-recipe").forEach(btn=>{ btn.onclick=()=>{ let idx=parseInt(btn.dataset.idx); openEditModal(idx); }; });
         document.querySelectorAll(".del-recipe").forEach(btn=>{ btn.onclick=()=>{ let idx=parseInt(btn.dataset.idx); deleteRecipe(idx); }; });
     }
 
-    function applyDesign() { let root=document.documentElement; root.style.setProperty('--primary-color', localStorage.getItem('design_primary')||'#2c5e3f'); root.style.setProperty('--accent-color', localStorage.getItem('design_accent')||'#88b04b'); root.style.setProperty('--bg-gradient-start', localStorage.getItem('design_bgStart')||'#f0f4f8'); root.style.setProperty('--bg-gradient-end', localStorage.getItem('design_bgEnd')||'#e9eef5'); root.style.setProperty('--border-radius-card', localStorage.getItem('design_borderRadius')||'44px'); root.style.setProperty('--border-radius-btn', localStorage.getItem('design_borderRadius')||'44px'); }
-    function saveDesign() { localStorage.setItem('design_primary', document.getElementById('primaryColor').value); localStorage.setItem('design_accent', document.getElementById('accentColor').value); localStorage.setItem('design_bgStart', document.getElementById('bgStart').value); localStorage.setItem('design_bgEnd', document.getElementById('bgEnd').value); localStorage.setItem('design_borderRadius', document.getElementById('borderRadius').value); applyDesign(); }
-    function loadDesignToPanel() { document.getElementById('primaryColor').value = localStorage.getItem('design_primary')||'#2c5e3f'; document.getElementById('accentColor').value = localStorage.getItem('design_accent')||'#88b04b'; document.getElementById('bgStart').value = localStorage.getItem('design_bgStart')||'#f0f4f8'; document.getElementById('bgEnd').value = localStorage.getItem('design_bgEnd')||'#e9eef5'; document.getElementById('borderRadius').value = localStorage.getItem('design_borderRadius')||'44px'; applyDesign(); }
     function initTabs() { document.querySelectorAll(".tab-btn").forEach(btn=>{ btn.onclick=()=>{ let id=btn.dataset.tab; document.querySelectorAll(".tab-content").forEach(t=>t.classList.remove("active")); document.getElementById(id).classList.add("active"); document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active")); btn.classList.add("active"); }; }); }
     
     document.getElementById("generateBtn").onclick = () => { generateMenuFromPeriod(); };
+    document.getElementById("addDayBtn").onclick = () => { addNewDay(); };
     document.getElementById("clearPurchasedBtn").onclick = () => { clearPurchased(); };
-    document.getElementById("resetShoppingBtn").onclick = () => { resetShoppingList(); };
+    document.getElementById("importFromMenuBtn").onclick = () => { importFromMenuToShopping(); };
     document.getElementById("showAddFormBtn").onclick = () => { document.getElementById("addRecipeForm").style.display = "block"; };
     document.getElementById("cancelAddForm").onclick = () => { document.getElementById("addRecipeForm").style.display = "none"; };
     document.getElementById("confirmAdd").onclick = () => { addNewRecipe(); };
@@ -700,20 +751,21 @@
     document.getElementById("resetToDefaultBtn").onclick = () => { resetToDefault(); };
     document.getElementById("saveEditBtn").onclick = () => { saveEdit(); };
     document.getElementById("closeModalBtn").onclick = () => { closeModal(); };
-    window.onclick = (e) => { if(e.target === document.getElementById("editModal")) closeModal(); };
-    
-    // Обработчики для добавления продукта
     document.getElementById("showAddProductBtn").onclick = () => { document.getElementById("addProductForm").style.display = "block"; };
     document.getElementById("cancelAddProductBtn").onclick = () => { document.getElementById("addProductForm").style.display = "none"; };
     document.getElementById("confirmAddProductBtn").onclick = () => { addManualProduct(); };
     
+    document.getElementById("openSettingsBtn").onclick = () => { document.getElementById("settingsModal").style.display = "flex"; };
+    document.getElementById("closeSettingsBtn").onclick = () => { document.getElementById("settingsModal").style.display = "none"; };
+    document.getElementById("saveSettingsBtn").onclick = () => { saveUISettings(); };
+    
+    window.onclick = (e) => { if(e.target === document.getElementById("editModal")) closeModal(); if(e.target === document.getElementById("settingsModal")) document.getElementById("settingsModal").style.display = "none"; };
+    
     document.querySelectorAll("#periodGroup .period-btn").forEach(btn=>{ btn.onclick=()=>{ document.querySelectorAll("#periodGroup .period-btn").forEach(b=>b.classList.remove("active-period")); btn.classList.add("active-period"); currentMenuPeriod=btn.dataset.period; generateMenuFromPeriod(); }; });
     document.querySelectorAll(".shopping-period-btn").forEach(btn=>{ btn.onclick=()=>{ document.querySelectorAll(".shopping-period-btn").forEach(b=>b.classList.remove("active-shopping-period")); btn.classList.add("active-shopping-period"); currentShoppingPeriod=btn.dataset.shoppingPeriod; updateShoppingListFromMenu(); }; });
     document.querySelectorAll(".cat-filter-btn").forEach(btn=>{ btn.onclick=()=>{ document.querySelectorAll(".cat-filter-btn").forEach(b=>b.classList.remove("active-cat")); btn.classList.add("active-cat"); currentCategoryFilter=btn.dataset.cat; renderRecipesList(); }; });
-    document.getElementById('primaryColor').addEventListener('change', saveDesign); document.getElementById('accentColor').addEventListener('change', saveDesign); document.getElementById('bgStart').addEventListener('change', saveDesign); document.getElementById('bgEnd').addEventListener('change', saveDesign); document.getElementById('borderRadius').addEventListener('change', saveDesign);
-    document.getElementById('resetDesignBtn').addEventListener('click', () => { localStorage.removeItem('design_primary'); localStorage.removeItem('design_accent'); localStorage.removeItem('design_bgStart'); localStorage.removeItem('design_bgEnd'); localStorage.removeItem('design_borderRadius'); loadDesignToPanel(); });
     
-    loadRecipes(); initTabs(); loadDesignToPanel(); loadShoppingList(); loadMenuFromLocal(); if(!currentMenu.length) generateMenuFromPeriod();
+    loadRecipes(); initTabs(); loadShoppingList(); loadMenuFromLocal(); loadSettings(); if(!currentMenu.length) generateMenuFromPeriod();
 </script>
 </body>
 </html>
