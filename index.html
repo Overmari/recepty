@@ -221,6 +221,23 @@
         .shopping-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
         .period-info { background: #e0e7ff; border-radius: 30px; padding: 6px 14px; font-size: 0.8rem; }
         
+        /* Кнопка отладки */
+        .debug-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 8px 16px;
+            font-size: 12px;
+            cursor: pointer;
+            z-index: 9999;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .debug-btn:hover { background: #555; }
+        
         @media (max-width: 700px) {
             .glass-card { padding: 1rem; }
             .tab-btn { padding: 8px 14px; font-size: 0.75rem; }
@@ -449,6 +466,9 @@
     </div>
 </div>
 
+<!-- Кнопка отладки (всегда видна) -->
+<button id="debugSaveBtn" class="debug-btn">🐛 Сохранить в облако (тест)</button>
+
 <script>
     // ========== АВТОРИЗАЦИЯ И ОБЛАЧНОЕ ХРАНЕНИЕ ==========
     let currentUser = null;
@@ -619,7 +639,6 @@
             console.log('📦 Cloud response:', data);
             
             if (data.success) {
-                // Загружаем рецепты
                 if (data.recipes && Array.isArray(data.recipes)) {
                     allRecipes = data.recipes;
                 } else {
@@ -627,7 +646,6 @@
                 }
                 if (!allRecipes.length) allRecipes = [...DEFAULT_RECIPES];
                 
-                // Загружаем меню
                 if (data.menu && Array.isArray(data.menu)) {
                     currentMenu = data.menu;
                 } else {
@@ -635,14 +653,13 @@
                 }
                 if (!currentMenu.length) generateMenuFromPeriod();
                 
-                // Загружаем список покупок
                 if (data.shopping && Array.isArray(data.shopping)) {
                     shoppingItems = data.shopping;
                 } else {
                     shoppingItems = [];
                 }
                 
-                console.log('✅ Loaded:', { recipes: allRecipes.length, menu: currentMenu.length, shopping: shoppingItems.length });
+                console.log(`✅ Loaded: ${allRecipes.length} recipes, ${currentMenu.length} menu days, ${shoppingItems.length} shopping items`);
                 saveAllDataToLocal();
                 renderAllUI();
             } else {
@@ -677,11 +694,14 @@
             console.log('📦 Save result:', result);
             if (result.success) {
                 saveAllDataToLocal();
+                alert('✅ Данные сохранены в облако!');
             } else {
                 console.error('❌ Save failed:', result.error);
+                alert('❌ Ошибка сохранения: ' + result.error);
             }
         } catch (error) {
             console.error('❌ Error saving to cloud:', error);
+            alert('❌ Ошибка соединения: ' + error.message);
             saveAllDataToLocal();
         }
     }
@@ -721,7 +741,7 @@
         renderAllUI();
     }
 
-    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (остаются без изменений) ==========
+    // ========== ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений, но они есть) ==========
     function getRecipesByCategory(category) { return category === "all" ? allRecipes : allRecipes.filter(r => r.category === category); }
     function getDaysCount(period) { return period === "week" ? 7 : (period === "2weeks" ? 14 : 30); }
     
@@ -955,10 +975,10 @@
     function renderShoppingTable() {
         let tbody=document.getElementById("shoppingTableBody"), tfoot=document.getElementById("shoppingTableFoot");
         if(!tbody) return;
-        if(!shoppingItems.length){ tbody.innerHTML="<tr><td colspan='8'>Нет продуктов. Добавьте продукт через кнопку ➕ или импортируйте из меню.<tr></td>"; tfoot.innerHTML=""; return; }
+        if(!shoppingItems.length){ tbody.innerHTML="<tr><td colspan='8'>Нет продуктов. Добавьте продукт через кнопку ➕ или импортируйте из меню.</td></td>"; tfoot.innerHTML=""; return; }
         let html="", totalCost=0;
         shoppingItems.forEach((item,idx)=>{ let needBuy=Math.max(0,item.totalNeeded-item.haveAtHome), cost=needBuy*item.price; totalCost+=cost; html+=`<tr class="${item.purchased?'purchased-row':''}"><td><input type="checkbox" class="purchase-checkbox" data-idx="${idx}" ${item.purchased?"checked":""}></td><td class="product-name-col">${item.name}</td><td><input type="number" class="total-needed-input" data-idx="${idx}" value="${item.totalNeeded}" step="0.1" style="width:80px;"> ${item.unit}</td><td><input type="number" class="have-input" data-idx="${idx}" value="${item.haveAtHome}" step="0.1" style="width:70px;"> ${item.unit}</td><td class="need-buy">${Math.round(needBuy*10)/10} ${item.unit}</td><td><input type="number" class="price-input" data-idx="${idx}" value="${item.price}" step="1" style="width:80px;"> ₽/${item.unit}</td><td>${Math.round(cost)} ₽</span></td><td><button class="delete-product-btn" data-idx="${idx}">🗑️</button></td></tr>`; });
-        tbody.innerHTML=html; tfoot.innerHTML=`<tr class="total-row"><td colspan="7" style="text-align:right;">💰 Итого: </td><td><strong>${Math.round(totalCost)} ₽</strong></td></tr>`;
+        tbody.innerHTML=html; tfoot.innerHTML=`<tr class="total-row"><td colspan="7" style="text-align:right;">💰 Итого: <tr><td><strong>${Math.round(totalCost)} ₽</strong></td></tr>`;
         document.querySelectorAll(".total-needed-input").forEach(inp=>{ inp.onchange=()=>{ let i=parseInt(inp.dataset.idx); if(!isNaN(i)){ shoppingItems[i].totalNeeded=parseFloat(inp.value)||0; saveAllData(); renderShoppingTable(); } }; });
         document.querySelectorAll(".purchase-checkbox").forEach(cb=>{ cb.onchange=()=>{ let i=parseInt(cb.dataset.idx); if(!isNaN(i)){ shoppingItems[i].purchased=cb.checked; saveAllData(); renderShoppingTable(); } }; });
         document.querySelectorAll(".have-input").forEach(inp=>{ inp.onchange=()=>{ let i=parseInt(inp.dataset.idx); if(!isNaN(i)){ shoppingItems[i].haveAtHome=parseFloat(inp.value)||0; saveAllData(); renderShoppingTable(); } }; });
@@ -1230,32 +1250,20 @@
         updateAuthUI();
     });
 
+    // Кнопка отладки
+    document.getElementById('debugSaveBtn').onclick = async () => {
+        console.log('🐛 Debug: Manual save triggered');
+        console.log('Recipes:', allRecipes);
+        console.log('Menu:', currentMenu);
+        console.log('Shopping:', shoppingItems);
+        await saveAllDataToCloud();
+    };
+
     // Запуск
     updateAuthUI();
     loadSettings();
     initTabs();
     checkAuth();
-</script>
-<!-- Кнопка для проверки сохранения -->
-<div style="position: fixed; bottom: 10px; right: 10px; z-index: 9999;">
-    <button id="debugSaveBtn" style="background: #333; color: white; padding: 5px 10px; font-size: 10px;">🐛 Debug: Сохранить в облако</button>
-</div>
-
-<script>
-    // Добавляем обработчик для отладки
-    setTimeout(() => {
-        const debugBtn = document.getElementById('debugSaveBtn');
-        if (debugBtn) {
-            debugBtn.onclick = async () => {
-                console.log('🐛 Debug: Manual save triggered');
-                console.log('Recipes:', allRecipes);
-                console.log('Menu:', currentMenu);
-                console.log('Shopping:', shoppingItems);
-                await saveAllDataToCloud();
-                alert('Сохранение выполнено! Проверьте логи и Supabase.');
-            };
-        }
-    }, 1000);
 </script>
 </body>
 </html>
