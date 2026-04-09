@@ -300,7 +300,7 @@
                 
                 <div style="overflow-x: auto;">
                     <table class="shopping-table" id="shoppingTable">
-                        <thead><tr><th class="checkbox-col">✅</th><th>Продукт</th><th>Нужно всего</th><th>Есть дома</th><th>Докупить</th><th>Цена за ед.</th><th>Стоимость</th><th></th></tr></thead>
+                        <thead><tr><th class="checkbox-col">✅</th><th>Продукт</th><th>Нужно всего</th><th>Есть дома</th><th>Докупить</th><th>Цена за ед.</th><th>Стоимость</th><th></th><tr></thead>
                         <tbody id="shoppingTableBody"></tbody>
                         <tfoot id="shoppingTableFoot"></tfoot>
                     </table>
@@ -459,6 +459,10 @@
             });
             const data = await response.json();
             if (data.error) {
+                // Если ошибка связана с подтверждением email, всё равно пробуем войти
+                if (data.error.includes('Email not confirmed') || data.error.includes('confirm')) {
+                    return await signIn(email, password);
+                }
                 return { error: data.error };
             }
             if (data.user) {
@@ -636,7 +640,7 @@
         await saveAllDataToCloud();
     }
 
-    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (остаются без изменений) ==========
+    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
     function getRecipesByCategory(category) { return category === "all" ? allRecipes : allRecipes.filter(r => r.category === category); }
     function getDaysCount(period) { return period === "week" ? 7 : (period === "2weeks" ? 14 : 30); }
     
@@ -870,9 +874,9 @@
     function renderShoppingTable() {
         let tbody=document.getElementById("shoppingTableBody"), tfoot=document.getElementById("shoppingTableFoot");
         if(!tbody) return;
-        if(!shoppingItems.length){ tbody.innerHTML="<tr><td colspan='8'>Нет продуктов. Добавьте продукт через кнопку ➕ или импортируйте из меню.</td></table>"; tfoot.innerHTML=""; return; }
+        if(!shoppingItems.length){ tbody.innerHTML="<tr><td colspan='8'>Нет продуктов. Добавьте продукт через кнопку ➕ или импортируйте из меню.</td></td>"; tfoot.innerHTML=""; return; }
         let html="", totalCost=0;
-        shoppingItems.forEach((item,idx)=>{ let needBuy=Math.max(0,item.totalNeeded-item.haveAtHome), cost=needBuy*item.price; totalCost+=cost; html+=`<tr class="${item.purchased?'purchased-row':''}"><td><input type="checkbox" class="purchase-checkbox" data-idx="${idx}" ${item.purchased?"checked":""}></td><td class="product-name-col">${item.name}</td><td><input type="number" class="total-needed-input" data-idx="${idx}" value="${item.totalNeeded}" step="0.1" style="width:80px;"> ${item.unit}</td><td><input type="number" class="have-input" data-idx="${idx}" value="${item.haveAtHome}" step="0.1" style="width:70px;"> ${item.unit}</td><td class="need-buy">${Math.round(needBuy*10)/10} ${item.unit}</td><td><input type="number" class="price-input" data-idx="${idx}" value="${item.price}" step="1" style="width:80px;"> ₽/${item.unit}</td><td>${Math.round(cost)} ₽</td><td><button class="delete-product-btn" data-idx="${idx}">🗑️</button></td></tr>`; });
+        shoppingItems.forEach((item,idx)=>{ let needBuy=Math.max(0,item.totalNeeded-item.haveAtHome), cost=needBuy*item.price; totalCost+=cost; html+=`<tr class="${item.purchased?'purchased-row':''}"><td><input type="checkbox" class="purchase-checkbox" data-idx="${idx}" ${item.purchased?"checked":""}></td><td class="product-name-col">${item.name}</td><td><input type="number" class="total-needed-input" data-idx="${idx}" value="${item.totalNeeded}" step="0.1" style="width:80px;"> ${item.unit}</td><td><input type="number" class="have-input" data-idx="${idx}" value="${item.haveAtHome}" step="0.1" style="width:70px;"> ${item.unit}</td><td class="need-buy">${Math.round(needBuy*10)/10} ${item.unit}</td><td><input type="number" class="price-input" data-idx="${idx}" value="${item.price}" step="1" style="width:80px;"> ₽/${item.unit}</td><td>${Math.round(cost)} ₽</span></td><td><button class="delete-product-btn" data-idx="${idx}">🗑️</button></td></tr>`; });
         tbody.innerHTML=html; tfoot.innerHTML=`<tr class="total-row"><td colspan="7" style="text-align:right;">💰 Итого: </td><td><strong>${Math.round(totalCost)} ₽</strong></td></tr>`;
         document.querySelectorAll(".total-needed-input").forEach(inp=>{ inp.onchange=()=>{ let i=parseInt(inp.dataset.idx); if(!isNaN(i)){ shoppingItems[i].totalNeeded=parseFloat(inp.value)||0; saveAllData(); renderShoppingTable(); } }; });
         document.querySelectorAll(".purchase-checkbox").forEach(cb=>{ cb.onchange=()=>{ let i=parseInt(cb.dataset.idx); if(!isNaN(i)){ shoppingItems[i].purchased=cb.checked; saveAllData(); renderShoppingTable(); } }; });
@@ -1073,7 +1077,6 @@
     const authError = document.getElementById('authError');
     const guestBtn = document.getElementById('guestBtn');
 
-    // Функция для обновления UI авторизации
     function updateAuthUI() {
         if (isLoginMode) {
             authTitle.innerText = 'Вход в аккаунт';
