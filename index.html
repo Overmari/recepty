@@ -221,22 +221,6 @@
         .shopping-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
         .period-info { background: #e0e7ff; border-radius: 30px; padding: 6px 14px; font-size: 0.8rem; }
         
-        .debug-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #333;
-            color: white;
-            border: none;
-            border-radius: 40px;
-            padding: 8px 16px;
-            font-size: 12px;
-            cursor: pointer;
-            z-index: 9999;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-        .debug-btn:hover { background: #555; }
-        
         @media (max-width: 700px) {
             .glass-card { padding: 1rem; }
             .tab-btn { padding: 8px 14px; font-size: 0.75rem; }
@@ -340,7 +324,7 @@
                 
                 <div style="overflow-x: auto;">
                     <table class="shopping-table" id="shoppingTable">
-                        <thead><tr><th class="checkbox-col">✅</th><th>Продукт</th><th>Нужно всего</th><th>Есть дома</th><th>Докупить</th><th>Цена за ед.</th><th>Стоимость</th><th></th></tr></thead>
+                        <thead><tr><th class="checkbox-col">✅</th><th>Продукт</th><th>Нужно всего</th><th>Есть дома</th><th>Докупить</th><th>Цена за ед.</th><th>Стоимость</th><th></th></table></thead>
                         <tbody id="shoppingTableBody"></tbody>
                         <tfoot id="shoppingTableFoot"></tfoot>
                     </table>
@@ -460,8 +444,6 @@
     </div>
 </div>
 
-<button id="debugSaveBtn" class="debug-btn">🐛 Сохранить в облако (тест)</button>
-
 <script>
     let currentUser = null;
     let isGuest = false;
@@ -472,7 +454,6 @@
     let currentShoppingPeriod = "week";
     let currentCategoryFilter = "all";
     let editingIndex = null;
-    let isLoading = true;
 
     const STORAGE_RECIPES = "nutriplan_recipes_crud_full";
     const STORAGE_SHOPPING = "nutriplan_shopping_crud";
@@ -487,6 +468,7 @@
         { name: "🍰 Чизкейк", category: "dessert", time: 90, ingredients: [{ name: "печенье", qty: "300г" }, { name: "масло сливочное", qty: "120г" }, { name: "творожный сыр", qty: "600г" }, { name: "сахарная пудра", qty: "100г" }, { name: "яйца", qty: "3шт" }, { name: "сливки 35%", qty: "150мл" }], process: "1. Сделайте основу из печенья и масла, выпекайте 10 минут.\n2. Смешайте сыр, пудру, яйца, сливки.\n3. Выпекайте на водяной бане 1 час 15 минут при 160°C.\n4. Охладите 6-8 часов." }
     ];
 
+    // ========== АВТОРИЗАЦИЯ ==========
     async function signUp(email, password) {
         try {
             const response = await fetch('/api/auth', {
@@ -600,7 +582,6 @@
         if (session.user) {
             currentUser = session.user;
             isGuest = false;
-            console.log('✅ User logged in:', currentUser.email);
             await loadAllDataFromCloud();
             showMainApp();
         } else {
@@ -618,29 +599,31 @@
         return response;
     }
 
+    // ========== ЗАГРУЗКА ДАННЫХ ИЗ ОБЛАКА ==========
     async function loadAllDataFromCloud() {
         try {
             console.log('📥 Loading data from cloud...');
             const response = await fetchWithAuth('/api/nutriplan?action=all');
             const data = await response.json();
-            console.log('📦 Cloud response:', data);
             
             if (data.success) {
-                if (data.recipes && Array.isArray(data.recipes)) {
+                // Загружаем рецепты
+                if (data.recipes && Array.isArray(data.recipes) && data.recipes.length > 0) {
                     allRecipes = data.recipes;
                 } else {
-                    allRecipes = [];
+                    allRecipes = [...DEFAULT_RECIPES];
                 }
-                if (!allRecipes.length) allRecipes = [...DEFAULT_RECIPES];
                 
-                if (data.menu && Array.isArray(data.menu)) {
+                // Загружаем меню
+                if (data.menu && Array.isArray(data.menu) && data.menu.length > 0) {
                     currentMenu = data.menu;
                 } else {
                     currentMenu = [];
+                    generateMenuFromPeriod();
                 }
-                if (!currentMenu.length) generateMenuFromPeriod();
                 
-                if (data.shopping && Array.isArray(data.shopping)) {
+                // Загружаем список покупок
+                if (data.shopping && Array.isArray(data.shopping) && data.shopping.length > 0) {
                     shoppingItems = data.shopping;
                 } else {
                     shoppingItems = [];
@@ -650,23 +633,25 @@
                 saveAllDataToLocal();
                 renderAllUI();
             } else {
-                console.error('❌ Failed to load from cloud:', data);
+                console.error('Failed to load from cloud, using local');
                 loadAllDataFromLocal();
             }
         } catch (error) {
-            console.error('❌ Error loading from cloud:', error);
+            console.error('Error loading from cloud:', error);
             loadAllDataFromLocal();
         }
     }
 
+    // ========== СОХРАНЕНИЕ ДАННЫХ В ОБЛАКО ==========
+    let isSaving = false;
+    
     async function saveAllDataToCloud() {
-        if (isGuest) {
-            saveAllDataToLocal();
-            return;
-        }
+        if (isGuest || isSaving) return;
         
+        isSaving = true;
         try {
             console.log('📤 Saving to cloud...', { recipes: allRecipes.length, menu: currentMenu.length, shopping: shoppingItems.length });
+            
             const response = await fetchWithAuth('/api/nutriplan', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -677,18 +662,18 @@
                 })
             });
             const result = await response.json();
-            console.log('📦 Save result:', result);
+            
             if (result.success) {
                 saveAllDataToLocal();
-                alert('✅ Данные сохранены в облако!');
+                console.log('✅ Data saved to cloud');
             } else {
-                console.error('❌ Save failed:', result.error);
-                alert('❌ Ошибка сохранения: ' + result.error);
+                console.error('Save failed:', result.error);
             }
         } catch (error) {
-            console.error('❌ Error saving to cloud:', error);
-            alert('❌ Ошибка соединения: ' + error.message);
+            console.error('Error saving to cloud:', error);
             saveAllDataToLocal();
+        } finally {
+            isSaving = false;
         }
     }
 
@@ -721,11 +706,7 @@
         updateShoppingPeriodInfo();
     }
 
-    async function saveAllData() {
-        await saveAllDataToCloud();
-        renderAllUI();
-    }
-
+    // ========== РАБОТА С РЕЦЕПТАМИ ==========
     function getRecipesByCategory(category) { return category === "all" ? allRecipes : allRecipes.filter(r => r.category === category); }
     function getDaysCount(period) { return period === "week" ? 7 : (period === "2weeks" ? 14 : 30); }
     
@@ -754,7 +735,7 @@
         }
         renderMenuUI();
         updateShoppingListFromMenu();
-        saveAllData();
+        saveAllDataToCloud();
     }
     
     function renderMenuUI() {
@@ -795,7 +776,7 @@
                 if(dayObj && dayObj[m]) {
                     if(dayObj[m].customText === undefined) dayObj[m].customText = dayObj[m].name;
                     dayObj[m].customText = inp.value;
-                    saveAllData();
+                    saveAllDataToCloud();
                 }
             };
         });
@@ -822,7 +803,7 @@
                     let customMeal = { name: userInput.trim(), category: "manual", time: 0, ingredients: [], process: "", customText: userInput.trim(), isManual: true };
                     dayObj[mealType] = customMeal;
                 }
-                saveAllData();
+                saveAllDataToCloud();
                 renderMenuUI();
                 updateShoppingListFromMenu();
             }
@@ -833,7 +814,7 @@
         if(confirm(`Удалить день ${dayNum}?`)) {
             currentMenu = currentMenu.filter(d => d.day !== dayNum);
             for(let i=0; i<currentMenu.length; i++) currentMenu[i].day = i+1;
-            saveAllData();
+            saveAllDataToCloud();
             renderMenuUI();
             updateShoppingListFromMenu();
         }
@@ -849,7 +830,7 @@
             snack: { name: "❌ Новое блюдо", time: 0, ingredients: [], process: "", isManual: true, customText: "❌ Новое блюдо" },
             dessert: { name: "❌ Новое блюдо", time: 0, ingredients: [], process: "", isManual: true, customText: "❌ Новое блюдо" }
         });
-        saveAllData();
+        saveAllDataToCloud();
         renderMenuUI();
         updateShoppingListFromMenu();
     }
@@ -919,7 +900,7 @@
             }
         }
         shoppingItems = newItems;
-        saveAllData();
+        saveAllDataToCloud();
         renderShoppingTable();
         updateShoppingPeriodInfo();
     }
@@ -939,7 +920,7 @@
         let price = parseFloat(document.getElementById("newProductPrice").value) || 0;
         let newItem = { id: Date.now() + Math.random(), name: name, totalNeeded: qty, unit: unit, displayNeeded: `${qty} ${unit}`, haveAtHome: 0, price: price, purchased: false };
         shoppingItems.push(newItem);
-        saveAllData();
+        saveAllDataToCloud();
         renderShoppingTable();
         document.getElementById("newProductName").value = "";
         document.getElementById("newProductQty").value = "1";
@@ -951,7 +932,7 @@
     function deleteProduct(idx) {
         if(confirm("Удалить продукт из списка?")) {
             shoppingItems.splice(idx,1);
-            saveAllData();
+            saveAllDataToCloud();
             renderShoppingTable();
         }
     }
@@ -959,22 +940,21 @@
     function renderShoppingTable() {
         let tbody=document.getElementById("shoppingTableBody"), tfoot=document.getElementById("shoppingTableFoot");
         if(!tbody) return;
-        if(!shoppingItems.length){ tbody.innerHTML="<td><td colspan='8'>Нет продуктов. Добавьте продукт через кнопку ➕ или импортируйте из меню.</td></td>"; tfoot.innerHTML=""; return; }
+        if(!shoppingItems.length){ tbody.innerHTML="<td><td colspan='8'>Нет продуктов. Добавьте продукт через кнопку ➕ или импортируйте из меню.</td></tr>"; tfoot.innerHTML=""; return; }
         let html="", totalCost=0;
         shoppingItems.forEach((item,idx)=>{ let needBuy=Math.max(0,item.totalNeeded-item.haveAtHome), cost=needBuy*item.price; totalCost+=cost; html+=`<tr class="${item.purchased?'purchased-row':''}"><td><input type="checkbox" class="purchase-checkbox" data-idx="${idx}" ${item.purchased?"checked":""}></td><td class="product-name-col">${item.name}</td><td><input type="number" class="total-needed-input" data-idx="${idx}" value="${item.totalNeeded}" step="0.1" style="width:80px;"> ${item.unit}</td><td><input type="number" class="have-input" data-idx="${idx}" value="${item.haveAtHome}" step="0.1" style="width:70px;"> ${item.unit}</td><td class="need-buy">${Math.round(needBuy*10)/10} ${item.unit}</td><td><input type="number" class="price-input" data-idx="${idx}" value="${item.price}" step="1" style="width:80px;"> ₽/${item.unit}</td><td>${Math.round(cost)} ₽</span></td><td><button class="delete-product-btn" data-idx="${idx}">🗑️</button></td></tr>`; });
         tbody.innerHTML=html; tfoot.innerHTML=`<tr class="total-row"><td colspan="7" style="text-align:right;">💰 Итого: <tr><td><strong>${Math.round(totalCost)} ₽</strong></td></tr>`;
-        document.querySelectorAll(".total-needed-input").forEach(inp=>{ inp.onchange=()=>{ let i=parseInt(inp.dataset.idx); if(!isNaN(i)){ shoppingItems[i].totalNeeded=parseFloat(inp.value)||0; saveAllData(); renderShoppingTable(); } }; });
-        document.querySelectorAll(".purchase-checkbox").forEach(cb=>{ cb.onchange=()=>{ let i=parseInt(cb.dataset.idx); if(!isNaN(i)){ shoppingItems[i].purchased=cb.checked; saveAllData(); renderShoppingTable(); } }; });
-        document.querySelectorAll(".have-input").forEach(inp=>{ inp.onchange=()=>{ let i=parseInt(inp.dataset.idx); if(!isNaN(i)){ shoppingItems[i].haveAtHome=parseFloat(inp.value)||0; saveAllData(); renderShoppingTable(); } }; });
-        document.querySelectorAll(".price-input").forEach(inp=>{ inp.onchange=()=>{ let i=parseInt(inp.dataset.idx); if(!isNaN(i)){ shoppingItems[i].price=parseFloat(inp.value)||0; saveAllData(); renderShoppingTable(); } }; });
+        document.querySelectorAll(".total-needed-input").forEach(inp=>{ inp.onchange=()=>{ let i=parseInt(inp.dataset.idx); if(!isNaN(i)){ shoppingItems[i].totalNeeded=parseFloat(inp.value)||0; saveAllDataToCloud(); renderShoppingTable(); } }; });
+        document.querySelectorAll(".purchase-checkbox").forEach(cb=>{ cb.onchange=()=>{ let i=parseInt(cb.dataset.idx); if(!isNaN(i)){ shoppingItems[i].purchased=cb.checked; saveAllDataToCloud(); renderShoppingTable(); } }; });
+        document.querySelectorAll(".have-input").forEach(inp=>{ inp.onchange=()=>{ let i=parseInt(inp.dataset.idx); if(!isNaN(i)){ shoppingItems[i].haveAtHome=parseFloat(inp.value)||0; saveAllDataToCloud(); renderShoppingTable(); } }; });
+        document.querySelectorAll(".price-input").forEach(inp=>{ inp.onchange=()=>{ let i=parseInt(inp.dataset.idx); if(!isNaN(i)){ shoppingItems[i].price=parseFloat(inp.value)||0; saveAllDataToCloud(); renderShoppingTable(); } }; });
         document.querySelectorAll(".delete-product-btn").forEach(btn=>{ btn.onclick=()=>{ let i=parseInt(btn.dataset.idx); if(!isNaN(i)) deleteProduct(i); }; });
         updateShoppingPeriodInfo();
     }
     
-    function clearPurchased() { shoppingItems.forEach(i=>i.purchased=false); saveAllData(); renderShoppingTable(); }
+    function clearPurchased() { shoppingItems.forEach(i=>i.purchased=false); saveAllDataToCloud(); renderShoppingTable(); }
     
-    // ========== ИСПРАВЛЕННЫЕ ФУНКЦИИ РАБОТЫ С РЕЦЕПТАМИ ==========
-    
+    // ========== ОСНОВНЫЕ ФУНКЦИИ РАБОТЫ С РЕЦЕПТАМИ ==========
     function renderRecipesList() {
         let container = document.getElementById("recipesList");
         if(!container) return;
@@ -982,8 +962,12 @@
         let filtered = currentCategoryFilter === "all" ? allRecipes : allRecipes.filter(r => r.category === currentCategoryFilter);
         let catNames = { breakfast: "🍳 Завтрак", soup: "🥣 Суп", main: "🍗 Второе", dessert: "🍰 Десерт", snack: "🍎 Перекус" };
         
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="recipe-item" style="text-align:center; color:#666;">Нет рецептов. Добавьте новый!</div>';
+            return;
+        }
+        
         container.innerHTML = filtered.map((rec, idx) => {
-            // Находим реальный индекс в массиве allRecipes
             let originalIdx = allRecipes.findIndex(r => r.name === rec.name && r.category === rec.category);
             if (originalIdx === -1) originalIdx = idx;
             
@@ -1002,7 +986,6 @@
             </div>`;
         }).join('');
         
-        // Привязываем события заново
         document.querySelectorAll(".edit-recipe").forEach(btn => {
             btn.onclick = () => {
                 let idx = parseInt(btn.dataset.idx);
@@ -1021,7 +1004,7 @@
     function deleteRecipe(idx) {
         if(confirm("Удалить рецепт?")) {
             allRecipes.splice(idx, 1);
-            saveAllData();
+            saveAllDataToCloud();
             renderRecipesList();
             // Обновляем меню, если в нём есть удалённые рецепты
             updateMenuAfterRecipeDelete();
@@ -1050,18 +1033,18 @@
     
     function deleteAllRecipes() {
         if(confirm("Удалить ВСЕ рецепты? Это действие нельзя отменить!")) {
-            allRecipes = [];
-            saveAllData();
+            allRecipes = [...DEFAULT_RECIPES];
+            saveAllDataToCloud();
             renderRecipesList();
-            // Восстанавливаем стандартные рецепты вместо полного удаления
-            resetToDefault();
+            renderMenuUI();
+            updateShoppingListFromMenu();
         }
     }
     
     function resetToDefault() {
         if(confirm("Сбросить к стандартным рецептам? Все ваши добавленные рецепты будут удалены.")) {
             allRecipes = [...DEFAULT_RECIPES];
-            saveAllData();
+            saveAllDataToCloud();
             renderRecipesList();
             renderMenuUI();
             updateShoppingListFromMenu();
@@ -1099,7 +1082,7 @@
             process: process || "" 
         });
         
-        saveAllData();
+        saveAllDataToCloud();
         renderRecipesList();
         generateMenuFromPeriod();
         
@@ -1155,7 +1138,7 @@
             process: process || "" 
         };
         
-        saveAllData();
+        saveAllDataToCloud();
         renderRecipesList();
         generateMenuFromPeriod();
         closeModal();
@@ -1163,6 +1146,7 @@
     
     function closeModal() { document.getElementById("editModal").style.display = "none"; editingIndex = null; }
 
+    // ========== НАСТРОЙКИ ==========
     function loadSettings() {
         let settings = localStorage.getItem(STORAGE_SETTINGS);
         if(settings) {
@@ -1248,6 +1232,7 @@
         }); 
     }
     
+    // Обработчики событий
     document.getElementById("generateBtn").onclick = () => { generateMenuFromPeriod(); };
     document.getElementById("addDayBtn").onclick = () => { addNewDay(); };
     document.getElementById("clearPurchasedBtn").onclick = () => { clearPurchased(); };
@@ -1273,6 +1258,7 @@
     document.querySelectorAll(".shopping-period-btn").forEach(btn=>{ btn.onclick=()=>{ document.querySelectorAll(".shopping-period-btn").forEach(b=>b.classList.remove("active-shopping-period")); btn.classList.add("active-shopping-period"); currentShoppingPeriod=btn.dataset.shoppingPeriod; updateShoppingListFromMenu(); }; });
     document.querySelectorAll(".cat-filter-btn").forEach(btn=>{ btn.onclick=()=>{ document.querySelectorAll(".cat-filter-btn").forEach(b=>b.classList.remove("active-cat")); btn.classList.add("active-cat"); currentCategoryFilter=btn.dataset.cat; renderRecipesList(); }; });
     
+    // ========== АВТОРИЗАЦИЯ (обработчики) ==========
     let isLoginMode = true;
     const authTitle = document.getElementById('authTitle');
     const authSubmitBtn = document.getElementById('authSubmitBtn');
@@ -1352,19 +1338,12 @@
         updateAuthUI();
     });
 
-    document.getElementById('debugSaveBtn').onclick = async () => {
-        console.log('🐛 Debug: Manual save triggered');
-        console.log('Recipes:', allRecipes);
-        console.log('Menu:', currentMenu);
-        console.log('Shopping:', shoppingItems);
-        await saveAllDataToCloud();
-    };
-
     function escapeHtml(str) { 
         if(!str) return ''; 
         return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); 
     }
 
+    // Запуск
     updateAuthUI();
     loadSettings();
     initTabs();
