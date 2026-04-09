@@ -7,6 +7,7 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
+    // CORS настройки
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, DELETE');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -14,26 +15,34 @@ export default async function handler(req, res) {
 
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        return res.status(401).json({ error: 'Unauthorized: No token provided' });
     }
 
+    // Получаем пользователя
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     if (userError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        console.error('Auth error:', userError);
+        return res.status(401).json({ error: 'Unauthorized: Invalid token' });
     }
     
     const userId = user.id;
+    console.log(`📌 User ID: ${userId}`);
 
     // GET: получение всех данных пользователя
     if (req.method === 'GET' && req.query.action === 'all') {
         try {
+            console.log('📥 GET /all for user:', userId);
+            
             // Получаем рецепты
             const { data: recipes, error: recipesError } = await supabase
                 .from('nutriplan_recipes')
                 .select('*')
                 .eq('user_id', userId);
             
-            if (recipesError) return res.status(500).json({ error: recipesError.message });
+            if (recipesError) {
+                console.error('Recipes error:', recipesError);
+                return res.status(500).json({ error: recipesError.message });
+            }
             
             // Получаем меню
             const { data: menu, error: menuError } = await supabase
@@ -41,7 +50,10 @@ export default async function handler(req, res) {
                 .select('*')
                 .eq('user_id', userId);
             
-            if (menuError) return res.status(500).json({ error: menuError.message });
+            if (menuError) {
+                console.error('Menu error:', menuError);
+                return res.status(500).json({ error: menuError.message });
+            }
             
             // Получаем список покупок
             const { data: shopping, error: shoppingError } = await supabase
@@ -49,12 +61,17 @@ export default async function handler(req, res) {
                 .select('*')
                 .eq('user_id', userId);
             
-            if (shoppingError) return res.status(500).json({ error: shoppingError.message });
+            if (shoppingError) {
+                console.error('Shopping error:', shoppingError);
+                return res.status(500).json({ error: shoppingError.message });
+            }
             
-            // Преобразуем данные
-            const recipesData = (recipes || []).map(r => r.data || r);
-            const menuData = (menu && menu.length && menu[0] && menu[0].data) ? menu[0].data : [];
-            const shoppingData = (shopping && shopping.length && shopping[0] && shopping[0].data) ? shopping[0].data : [];
+            // Извлекаем данные из JSONB полей
+            const recipesData = (recipes || []).map(r => r.data);
+            const menuData = (menu && menu.length && menu[0]) ? menu[0].data : [];
+            const shoppingData = (shopping && shopping.length && shopping[0]) ? shopping[0].data : [];
+            
+            console.log(`✅ Loaded: ${recipesData.length} recipes, ${menuData.length} menu days, ${shoppingData.length} shopping items`);
             
             return res.json({
                 success: true,
@@ -72,15 +89,23 @@ export default async function handler(req, res) {
     if (req.method === 'POST' && req.body.action === 'save_all') {
         const { recipes, menu, shopping } = req.body;
         
+        console.log(`📤 POST /save_all for user: ${userId}`);
+        console.log(`   Recipes: ${recipes?.length || 0}, Menu days: ${menu?.length || 0}, Shopping items: ${shopping?.length || 0}`);
+        
         try {
-            // Удаляем старые рецепты
-            await supabase
+            // 1. Удаляем старые рецепты
+            const { error: recipesDeleteError } = await supabase
                 .from('nutriplan_recipes')
                 .delete()
                 .eq('user_id', userId);
             
-            // Сохраняем новые рецепты
-            if (recipes && recipes.length) {
+            if (recipesDeleteError) {
+                console.error('Delete recipes error:', recipesDeleteError);
+                return res.status(500).json({ error: recipesDeleteError.message });
+            }
+            
+            // 2. Сохраняем новые рецепты
+            if (recipes && recipes.length > 0) {
                 const recipesToInsert = recipes.map(r => ({
                     user_id: userId,
                     data: r
@@ -88,35 +113,57 @@ export default async function handler(req, res) {
                 const { error: recipesInsertError } = await supabase
                     .from('nutriplan_recipes')
                     .insert(recipesToInsert);
-                if (recipesInsertError) return res.status(500).json({ error: recipesInsertError.message });
+                if (recipesInsertError) {
+                    console.error('Insert recipes error:', recipesInsertError);
+                    return res.status(500).json({ error: recipesInsertError.message });
+                }
+                console.log(`✅ Saved ${recipesToInsert.length} recipes`);
             }
             
-            // Удаляем старое меню
-            await supabase
+            // 3. Удаляем старое меню
+            const { error: menuDeleteError } = await supabase
                 .from('nutriplan_menu')
                 .delete()
                 .eq('user_id', userId);
             
-            // Сохраняем новое меню
-            if (menu && menu.length) {
+            if (menuDeleteError) {
+                console.error('Delete menu error:', menuDeleteError);
+                return res.status(500).json({ error: menuDeleteError.message });
+            }
+            
+            // 4. Сохраняем новое меню
+            if (menu && menu.length > 0) {
                 const { error: menuInsertError } = await supabase
                     .from('nutriplan_menu')
                     .insert({ user_id: userId, data: menu });
-                if (menuInsertError) return res.status(500).json({ error: menuInsertError.message });
+                if (menuInsertError) {
+                    console.error('Insert menu error:', menuInsertError);
+                    return res.status(500).json({ error: menuInsertError.message });
+                }
+                console.log(`✅ Saved menu with ${menu.length} days`);
             }
             
-            // Удаляем старый список покупок
-            await supabase
+            // 5. Удаляем старый список покупок
+            const { error: shoppingDeleteError } = await supabase
                 .from('nutriplan_shopping')
                 .delete()
                 .eq('user_id', userId);
             
-            // Сохраняем новый список покупок
-            if (shopping && shopping.length) {
+            if (shoppingDeleteError) {
+                console.error('Delete shopping error:', shoppingDeleteError);
+                return res.status(500).json({ error: shoppingDeleteError.message });
+            }
+            
+            // 6. Сохраняем новый список покупок
+            if (shopping && shopping.length > 0) {
                 const { error: shoppingInsertError } = await supabase
                     .from('nutriplan_shopping')
                     .insert({ user_id: userId, data: shopping });
-                if (shoppingInsertError) return res.status(500).json({ error: shoppingInsertError.message });
+                if (shoppingInsertError) {
+                    console.error('Insert shopping error:', shoppingInsertError);
+                    return res.status(500).json({ error: shoppingInsertError.message });
+                }
+                console.log(`✅ Saved ${shopping.length} shopping items`);
             }
             
             return res.json({ success: true });
