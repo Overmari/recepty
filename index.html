@@ -78,7 +78,6 @@
         .guest-btn { background: linear-gradient(135deg, #64748b 0%, #475569 100%) !important; margin-top: 12px !important; }
         .error-msg { color: #ef4444; font-size: 14px; margin-bottom: 16px; text-align: center; }
         
-        /* Скелетон загрузки */
         .loading-skeleton {
             background: rgba(255,255,255,0.8);
             border-radius: 24px;
@@ -546,7 +545,6 @@
                 body: JSON.stringify({ action: 'signout' })
             });
         } catch (err) {}
-        // После выхода показываем форму входа
         document.getElementById('authContainer').style.display = 'block';
         document.getElementById('mainApp').style.display = 'none';
         document.getElementById('loadingSkeleton').style.display = 'none';
@@ -593,10 +591,10 @@
         if (session.user) {
             currentUser = session.user;
             isGuest = false;
+            console.log('✅ User logged in:', currentUser.email);
             await loadAllDataFromCloud();
             showMainApp();
         } else {
-            // Нет активной сессии, показываем форму входа
             document.getElementById('authContainer').style.display = 'block';
             document.getElementById('mainApp').style.display = 'none';
             document.getElementById('loadingSkeleton').style.display = 'none';
@@ -615,39 +613,44 @@
     // ========== ЗАГРУЗКА ДАННЫХ ИЗ ОБЛАКА ==========
     async function loadAllDataFromCloud() {
         try {
+            console.log('📥 Loading data from cloud...');
             const response = await fetchWithAuth('/api/nutriplan?action=all');
             const data = await response.json();
+            console.log('📦 Cloud response:', data);
+            
             if (data.success) {
-                // Преобразуем рецепты из формата {data: {...}} в простой массив
-                if (data.recipes && data.recipes.length) {
-                    allRecipes = data.recipes.map(r => r.data || r);
+                // Загружаем рецепты
+                if (data.recipes && Array.isArray(data.recipes)) {
+                    allRecipes = data.recipes;
                 } else {
                     allRecipes = [];
                 }
                 if (!allRecipes.length) allRecipes = [...DEFAULT_RECIPES];
                 
                 // Загружаем меню
-                if (data.menu && data.menu.length && data.menu[0].data) {
-                    currentMenu = data.menu[0].data;
+                if (data.menu && Array.isArray(data.menu)) {
+                    currentMenu = data.menu;
                 } else {
                     currentMenu = [];
                 }
                 if (!currentMenu.length) generateMenuFromPeriod();
                 
                 // Загружаем список покупок
-                if (data.shopping && data.shopping.length && data.shopping[0].data) {
-                    shoppingItems = data.shopping[0].data;
+                if (data.shopping && Array.isArray(data.shopping)) {
+                    shoppingItems = data.shopping;
                 } else {
                     shoppingItems = [];
                 }
                 
+                console.log('✅ Loaded:', { recipes: allRecipes.length, menu: currentMenu.length, shopping: shoppingItems.length });
                 saveAllDataToLocal();
                 renderAllUI();
             } else {
+                console.error('❌ Failed to load from cloud:', data);
                 loadAllDataFromLocal();
             }
         } catch (error) {
-            console.error('Error loading from cloud:', error);
+            console.error('❌ Error loading from cloud:', error);
             loadAllDataFromLocal();
         }
     }
@@ -658,8 +661,10 @@
             saveAllDataToLocal();
             return;
         }
+        
         try {
-            await fetchWithAuth('/api/nutriplan', {
+            console.log('📤 Saving to cloud...', { recipes: allRecipes.length, menu: currentMenu.length, shopping: shoppingItems.length });
+            const response = await fetchWithAuth('/api/nutriplan', {
                 method: 'POST',
                 body: JSON.stringify({
                     action: 'save_all',
@@ -668,10 +673,17 @@
                     shopping: shoppingItems
                 })
             });
+            const result = await response.json();
+            console.log('📦 Save result:', result);
+            if (result.success) {
+                saveAllDataToLocal();
+            } else {
+                console.error('❌ Save failed:', result.error);
+            }
         } catch (error) {
-            console.error('Error saving to cloud:', error);
+            console.error('❌ Error saving to cloud:', error);
+            saveAllDataToLocal();
         }
-        saveAllDataToLocal();
     }
 
     // ========== ЛОКАЛЬНОЕ ХРАНЕНИЕ (гость/резерв) ==========
@@ -709,7 +721,7 @@
         renderAllUI();
     }
 
-    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (остаются без изменений) ==========
     function getRecipesByCategory(category) { return category === "all" ? allRecipes : allRecipes.filter(r => r.category === category); }
     function getDaysCount(period) { return period === "week" ? 7 : (period === "2weeks" ? 14 : 30); }
     
@@ -1209,7 +1221,6 @@
         allRecipes = [];
         currentMenu = [];
         shoppingItems = [];
-        // Показываем форму входа
         document.getElementById('authContainer').style.display = 'block';
         document.getElementById('mainApp').style.display = 'none';
         document.getElementById('loadingSkeleton').style.display = 'none';
