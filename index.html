@@ -221,7 +221,6 @@
         .shopping-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
         .period-info { background: #e0e7ff; border-radius: 30px; padding: 6px 14px; font-size: 0.8rem; }
         
-        /* Кнопка отладки */
         .debug-btn {
             position: fixed;
             bottom: 20px;
@@ -248,7 +247,6 @@
 </head>
 <body>
 <div class="app-container">
-    <!-- Авторизация -->
     <div id="authContainer" class="auth-container" style="display: none;">
         <h2 id="authTitle">Вход в аккаунт</h2>
         <div id="authError" class="error-msg"></div>
@@ -259,7 +257,6 @@
         <button id="guestBtn" class="guest-btn">👥 Продолжить без регистрации (гость)</button>
     </div>
 
-    <!-- Скелетон загрузки -->
     <div id="loadingSkeleton" class="loading-skeleton" style="display: none;">
         <div class="skeleton-line" style="width: 60%;"></div>
         <div class="skeleton-line" style="width: 40%;"></div>
@@ -267,7 +264,6 @@
         <div class="skeleton-line" style="width: 50%;"></div>
     </div>
 
-    <!-- Основное приложение -->
     <div id="mainApp" style="display: none;">
         <div class="user-bar">
             <div>
@@ -409,7 +405,6 @@
     </div>
 </div>
 
-<!-- Модальное окно редактирования рецепта -->
 <div id="editModal" class="modal">
     <div class="modal-content">
         <h3>✏️ Редактировать рецепт</h3>
@@ -429,7 +424,6 @@
     </div>
 </div>
 
-<!-- Модальное окно НАСТРОЕК -->
 <div id="settingsModal" class="modal">
     <div class="modal-content">
         <h3>⚙️ Настройки интерфейса</h3>
@@ -466,11 +460,9 @@
     </div>
 </div>
 
-<!-- Кнопка отладки (всегда видна) -->
 <button id="debugSaveBtn" class="debug-btn">🐛 Сохранить в облако (тест)</button>
 
 <script>
-    // ========== АВТОРИЗАЦИЯ И ОБЛАЧНОЕ ХРАНЕНИЕ ==========
     let currentUser = null;
     let isGuest = false;
     let allRecipes = [];
@@ -482,13 +474,11 @@
     let editingIndex = null;
     let isLoading = true;
 
-    // Константы для localStorage (гость)
     const STORAGE_RECIPES = "nutriplan_recipes_crud_full";
     const STORAGE_SHOPPING = "nutriplan_shopping_crud";
     const STORAGE_MENU = "nutriplan_menu_crud";
     const STORAGE_SETTINGS = "nutriplan_settings_full";
 
-    // Стандартные рецепты
     const DEFAULT_RECIPES = [
         { name: "🥣 Борщ", category: "soup", time: 120, ingredients: [{ name: "свёкла", qty: "2шт" }, { name: "капуста", qty: "200г" }, { name: "картофель", qty: "2шт" }, { name: "говядина на кости", qty: "300-500г" }, { name: "лук", qty: "1шт" }, { name: "морковь", qty: "2шт" }, { name: "томатная паста", qty: "2ст.л" }, { name: "вода", qty: "3л" }, { name: "лавровый лист", qty: "1шт" }, { name: "лимон", qty: "долька" }, { name: "сахар", qty: "1ст.л" }, { name: "зелень", qty: "по вкусу" }, { name: "сметана", qty: "для подачи" }], process: "1. На сухой сковороде обжариваем лук и морковь до румяной корочки.\n2. В кастрюле с мясом заливаем водой, доводим до кипения, снимаем пену и варим бульон 2 часа.\n3. Мелко нарезаем лук, натираем сырую морковь и свёклу, шинкуем капусту.\n4. Обжариваем морковь с луком, добавляем свёклу, томатную пасту, сбрызгиваем лимонным соком, вливаем половник бульона. Тушим 10 минут.\n5. Из бульона достаём мясо, добавляем картофель и капусту - варим до готовности.\n6. Добавляем зажарку со свёклой, солим, добавляем сахар, чеснок.\n7. Накрываем крышкой и даём настояться 10 минут." },
         { name: "🍗 Куриные котлеты", category: "main", time: 30, ingredients: [{ name: "филе куриное", qty: "600гр" }, { name: "лук", qty: "1шт" }, { name: "морковь", qty: "1шт" }, { name: "специи", qty: "по вкусу" }], process: "1. Пропустите курицу через мясорубку.\n2. Добавьте мелко нарезанный лук, натертую морковь, специи.\n3. Сформируйте котлеты и обжарьте до готовности." },
@@ -497,7 +487,6 @@
         { name: "🍰 Чизкейк", category: "dessert", time: 90, ingredients: [{ name: "печенье", qty: "300г" }, { name: "масло сливочное", qty: "120г" }, { name: "творожный сыр", qty: "600г" }, { name: "сахарная пудра", qty: "100г" }, { name: "яйца", qty: "3шт" }, { name: "сливки 35%", qty: "150мл" }], process: "1. Сделайте основу из печенья и масла, выпекайте 10 минут.\n2. Смешайте сыр, пудру, яйца, сливки.\n3. Выпекайте на водяной бане 1 час 15 минут при 160°C.\n4. Охладите 6-8 часов." }
     ];
 
-    // ========== ФУНКЦИИ АВТОРИЗАЦИИ ==========
     async function signUp(email, password) {
         try {
             const response = await fetch('/api/auth', {
@@ -621,7 +610,6 @@
         }
     }
 
-    // ========== ФУНКЦИИ ДЛЯ РАБОТЫ С API ==========
     async function fetchWithAuth(url, options = {}) {
         const token = localStorage.getItem('sb_access_token');
         const headers = { 'Content-Type': 'application/json', ...options.headers };
@@ -630,7 +618,6 @@
         return response;
     }
 
-    // ========== ЗАГРУЗКА ДАННЫХ ИЗ ОБЛАКА ==========
     async function loadAllDataFromCloud() {
         try {
             console.log('📥 Loading data from cloud...');
@@ -672,7 +659,6 @@
         }
     }
 
-    // ========== СОХРАНЕНИЕ ДАННЫХ В ОБЛАКО ==========
     async function saveAllDataToCloud() {
         if (isGuest) {
             saveAllDataToLocal();
@@ -706,7 +692,6 @@
         }
     }
 
-    // ========== ЛОКАЛЬНОЕ ХРАНЕНИЕ (гость/резерв) ==========
     function saveAllDataToLocal() {
         localStorage.setItem(STORAGE_RECIPES, JSON.stringify(allRecipes));
         localStorage.setItem(STORAGE_SHOPPING, JSON.stringify(shoppingItems));
@@ -741,7 +726,6 @@
         renderAllUI();
     }
 
-    // ========== ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений, но они есть) ==========
     function getRecipesByCategory(category) { return category === "all" ? allRecipes : allRecipes.filter(r => r.category === category); }
     function getDaysCount(period) { return period === "week" ? 7 : (period === "2weeks" ? 14 : 30); }
     
@@ -975,7 +959,7 @@
     function renderShoppingTable() {
         let tbody=document.getElementById("shoppingTableBody"), tfoot=document.getElementById("shoppingTableFoot");
         if(!tbody) return;
-        if(!shoppingItems.length){ tbody.innerHTML="<tr><td colspan='8'>Нет продуктов. Добавьте продукт через кнопку ➕ или импортируйте из меню.</td></td>"; tfoot.innerHTML=""; return; }
+        if(!shoppingItems.length){ tbody.innerHTML="<td><td colspan='8'>Нет продуктов. Добавьте продукт через кнопку ➕ или импортируйте из меню.</td></td>"; tfoot.innerHTML=""; return; }
         let html="", totalCost=0;
         shoppingItems.forEach((item,idx)=>{ let needBuy=Math.max(0,item.totalNeeded-item.haveAtHome), cost=needBuy*item.price; totalCost+=cost; html+=`<tr class="${item.purchased?'purchased-row':''}"><td><input type="checkbox" class="purchase-checkbox" data-idx="${idx}" ${item.purchased?"checked":""}></td><td class="product-name-col">${item.name}</td><td><input type="number" class="total-needed-input" data-idx="${idx}" value="${item.totalNeeded}" step="0.1" style="width:80px;"> ${item.unit}</td><td><input type="number" class="have-input" data-idx="${idx}" value="${item.haveAtHome}" step="0.1" style="width:70px;"> ${item.unit}</td><td class="need-buy">${Math.round(needBuy*10)/10} ${item.unit}</td><td><input type="number" class="price-input" data-idx="${idx}" value="${item.price}" step="1" style="width:80px;"> ₽/${item.unit}</td><td>${Math.round(cost)} ₽</span></td><td><button class="delete-product-btn" data-idx="${idx}">🗑️</button></td></tr>`; });
         tbody.innerHTML=html; tfoot.innerHTML=`<tr class="total-row"><td colspan="7" style="text-align:right;">💰 Итого: <tr><td><strong>${Math.round(totalCost)} ₽</strong></td></tr>`;
@@ -989,22 +973,100 @@
     
     function clearPurchased() { shoppingItems.forEach(i=>i.purchased=false); saveAllData(); renderShoppingTable(); }
     
+    // ========== ИСПРАВЛЕННЫЕ ФУНКЦИИ РАБОТЫ С РЕЦЕПТАМИ ==========
+    
     function renderRecipesList() {
         let container = document.getElementById("recipesList");
         if(!container) return;
+        
         let filtered = currentCategoryFilter === "all" ? allRecipes : allRecipes.filter(r => r.category === currentCategoryFilter);
         let catNames = { breakfast: "🍳 Завтрак", soup: "🥣 Суп", main: "🍗 Второе", dessert: "🍰 Десерт", snack: "🍎 Перекус" };
+        
         container.innerHTML = filtered.map((rec, idx) => {
+            // Находим реальный индекс в массиве allRecipes
             let originalIdx = allRecipes.findIndex(r => r.name === rec.name && r.category === rec.category);
-            return `<div class="recipe-item"><div class="recipe-header"><div><span class="recipe-number">#${originalIdx}</span><span class="recipe-name">${rec.name}</span></div><span class="recipe-time">⏱️ ${rec.time} мин</span></div><div><span class="recipe-category-tag">${catNames[rec.category]}</span></div><div class="recipe-ingredients">📝 ${rec.ingredients.map(i=>`${i.name} ${i.qty}`).join(', ')}</div><div class="recipe-process-preview">📖 ${rec.process ? rec.process.substring(0,150)+(rec.process.length>150?"...":"") : "Нет описания"}</div><div class="recipe-actions"><button class="btn-modern btn-sm edit-recipe" data-idx="${originalIdx}">✏️ Ред.</button> <button class="btn-modern btn-danger btn-sm del-recipe" data-idx="${originalIdx}">🗑️ Удалить</button></div></div>`;
+            if (originalIdx === -1) originalIdx = idx;
+            
+            return `<div class="recipe-item" data-recipe-idx="${originalIdx}">
+                <div class="recipe-header">
+                    <div><span class="recipe-number">#${originalIdx + 1}</span><span class="recipe-name">${escapeHtml(rec.name)}</span></div>
+                    <span class="recipe-time">⏱️ ${rec.time} мин</span>
+                </div>
+                <div><span class="recipe-category-tag">${catNames[rec.category] || rec.category}</span></div>
+                <div class="recipe-ingredients">📝 ${rec.ingredients.map(i=>`${i.name} ${i.qty}`).join(', ')}</div>
+                <div class="recipe-process-preview">📖 ${rec.process ? rec.process.substring(0,150)+(rec.process.length>150?"...":"") : "Нет описания"}</div>
+                <div class="recipe-actions">
+                    <button class="btn-modern btn-sm edit-recipe" data-idx="${originalIdx}">✏️ Ред.</button>
+                    <button class="btn-modern btn-danger btn-sm del-recipe" data-idx="${originalIdx}">🗑️ Удалить</button>
+                </div>
+            </div>`;
         }).join('');
-        document.querySelectorAll(".edit-recipe").forEach(btn=>{ btn.onclick=()=>{ let idx=parseInt(btn.dataset.idx); openEditModal(idx); }; });
-        document.querySelectorAll(".del-recipe").forEach(btn=>{ btn.onclick=()=>{ let idx=parseInt(btn.dataset.idx); deleteRecipe(idx); }; });
+        
+        // Привязываем события заново
+        document.querySelectorAll(".edit-recipe").forEach(btn => {
+            btn.onclick = () => {
+                let idx = parseInt(btn.dataset.idx);
+                if (!isNaN(idx)) openEditModal(idx);
+            };
+        });
+        
+        document.querySelectorAll(".del-recipe").forEach(btn => {
+            btn.onclick = () => {
+                let idx = parseInt(btn.dataset.idx);
+                if (!isNaN(idx)) deleteRecipe(idx);
+            };
+        });
     }
     
-    function deleteRecipe(idx) { if(confirm("Удалить рецепт?")) { allRecipes.splice(idx,1); saveAllData(); renderRecipesList(); generateMenuFromPeriod(); } }
-    function deleteAllRecipes() { if(confirm("Удалить ВСЕ рецепты?")) { allRecipes = []; saveAllData(); renderRecipesList(); generateMenuFromPeriod(); } }
-    function resetToDefault() { if(confirm("Сбросить к стандартным?")) { allRecipes = [...DEFAULT_RECIPES]; saveAllData(); renderRecipesList(); generateMenuFromPeriod(); } }
+    function deleteRecipe(idx) {
+        if(confirm("Удалить рецепт?")) {
+            allRecipes.splice(idx, 1);
+            saveAllData();
+            renderRecipesList();
+            // Обновляем меню, если в нём есть удалённые рецепты
+            updateMenuAfterRecipeDelete();
+        }
+    }
+    
+    function updateMenuAfterRecipeDelete() {
+        let menuChanged = false;
+        for (let day of currentMenu) {
+            for (let meal of ["breakfast","lunch","dinner","snack","dessert"]) {
+                if (day[meal] && day[meal].name && !day[meal].isManual) {
+                    const recipeExists = allRecipes.some(r => r.name === day[meal].name && r.category === day[meal].category);
+                    if (!recipeExists) {
+                        const newRecipe = getRandomMealByCategory(day[meal].category);
+                        day[meal] = newRecipe;
+                        menuChanged = true;
+                    }
+                }
+            }
+        }
+        if (menuChanged) {
+            renderMenuUI();
+            updateShoppingListFromMenu();
+        }
+    }
+    
+    function deleteAllRecipes() {
+        if(confirm("Удалить ВСЕ рецепты? Это действие нельзя отменить!")) {
+            allRecipes = [];
+            saveAllData();
+            renderRecipesList();
+            // Восстанавливаем стандартные рецепты вместо полного удаления
+            resetToDefault();
+        }
+    }
+    
+    function resetToDefault() {
+        if(confirm("Сбросить к стандартным рецептам? Все ваши добавленные рецепты будут удалены.")) {
+            allRecipes = [...DEFAULT_RECIPES];
+            saveAllData();
+            renderRecipesList();
+            renderMenuUI();
+            updateShoppingListFromMenu();
+        }
+    }
     
     function addNewRecipe() {
         let name = document.getElementById("newRecipeName").value.trim();
@@ -1012,13 +1074,35 @@
         let time = parseInt(document.getElementById("newRecipeTime").value) || 30;
         let ingText = document.getElementById("newRecipeIngredients").value;
         let process = document.getElementById("newRecipeProcess").value;
-        let lines = ingText.split(/\r?\n/); let ings = [];
-        for(let l of lines){ if(l.includes(':')){ let [a,b]=l.split(':'); if(a&&b) ings.push({name:a.trim(), qty:b.trim()}); } else if(l.trim()) ings.push({name:l.trim(), qty:"1шт"}); }
-        if(!name || !ings.length){ alert("Введите название и ингредиенты"); return; }
-        allRecipes.push({ name, category, time, ingredients: ings, process: process || "" });
+        
+        let lines = ingText.split(/\r?\n/); 
+        let ings = [];
+        for(let l of lines){ 
+            if(l.includes(':')){ 
+                let [a,b]=l.split(':'); 
+                if(a&&b) ings.push({name:a.trim(), qty:b.trim()}); 
+            } else if(l.trim()) {
+                ings.push({name:l.trim(), qty:"1шт"});
+            }
+        }
+        
+        if(!name || !ings.length){ 
+            alert("Введите название и ингредиенты"); 
+            return; 
+        }
+        
+        allRecipes.push({ 
+            name, 
+            category, 
+            time, 
+            ingredients: ings, 
+            process: process || "" 
+        });
+        
         saveAllData();
         renderRecipesList();
         generateMenuFromPeriod();
+        
         document.getElementById("newRecipeName").value = "";
         document.getElementById("newRecipeIngredients").value = "";
         document.getElementById("newRecipeProcess").value = "";
@@ -1040,15 +1124,37 @@
     
     function saveEdit() {
         if(editingIndex === null) return;
+        
         let name = document.getElementById("editName").value.trim();
         let category = document.getElementById("editCategory").value;
         let time = parseInt(document.getElementById("editTime").value) || 30;
         let ingText = document.getElementById("editIngredients").value;
         let process = document.getElementById("editProcess").value;
-        let lines = ingText.split(/\r?\n/); let ings = [];
-        for(let l of lines){ if(l.includes(':')){ let [a,b]=l.split(':'); if(a&&b) ings.push({name:a.trim(), qty:b.trim()}); } else if(l.trim()) ings.push({name:l.trim(), qty:"1шт"}); }
-        if(!name || !ings.length){ alert("Введите название и ингредиенты"); return; }
-        allRecipes[editingIndex] = { name, category, time, ingredients: ings, process: process || "" };
+        
+        let lines = ingText.split(/\r?\n/); 
+        let ings = [];
+        for(let l of lines){ 
+            if(l.includes(':')){ 
+                let [a,b]=l.split(':'); 
+                if(a&&b) ings.push({name:a.trim(), qty:b.trim()}); 
+            } else if(l.trim()) {
+                ings.push({name:l.trim(), qty:"1шт"});
+            }
+        }
+        
+        if(!name || !ings.length){ 
+            alert("Введите название и ингредиенты"); 
+            return; 
+        }
+        
+        allRecipes[editingIndex] = { 
+            name, 
+            category, 
+            time, 
+            ingredients: ings, 
+            process: process || "" 
+        };
+        
         saveAllData();
         renderRecipesList();
         generateMenuFromPeriod();
@@ -1057,7 +1163,6 @@
     
     function closeModal() { document.getElementById("editModal").style.display = "none"; editingIndex = null; }
 
-    // ========== НАСТРОЙКИ ==========
     function loadSettings() {
         let settings = localStorage.getItem(STORAGE_SETTINGS);
         if(settings) {
@@ -1131,7 +1236,6 @@
         document.getElementById("recipesTitle").innerHTML = s.recipesHeaderTitle;
     }
 
-    // ========== ИНИЦИАЛИЗАЦИЯ ==========
     function initTabs() { 
         document.querySelectorAll(".tab-btn").forEach(btn=>{ 
             btn.onclick=()=>{ 
@@ -1144,7 +1248,6 @@
         }); 
     }
     
-    // Обработчики событий
     document.getElementById("generateBtn").onclick = () => { generateMenuFromPeriod(); };
     document.getElementById("addDayBtn").onclick = () => { addNewDay(); };
     document.getElementById("clearPurchasedBtn").onclick = () => { clearPurchased(); };
@@ -1170,7 +1273,6 @@
     document.querySelectorAll(".shopping-period-btn").forEach(btn=>{ btn.onclick=()=>{ document.querySelectorAll(".shopping-period-btn").forEach(b=>b.classList.remove("active-shopping-period")); btn.classList.add("active-shopping-period"); currentShoppingPeriod=btn.dataset.shoppingPeriod; updateShoppingListFromMenu(); }; });
     document.querySelectorAll(".cat-filter-btn").forEach(btn=>{ btn.onclick=()=>{ document.querySelectorAll(".cat-filter-btn").forEach(b=>b.classList.remove("active-cat")); btn.classList.add("active-cat"); currentCategoryFilter=btn.dataset.cat; renderRecipesList(); }; });
     
-    // ========== АВТОРИЗАЦИЯ (обработчики) ==========
     let isLoginMode = true;
     const authTitle = document.getElementById('authTitle');
     const authSubmitBtn = document.getElementById('authSubmitBtn');
@@ -1250,7 +1352,6 @@
         updateAuthUI();
     });
 
-    // Кнопка отладки
     document.getElementById('debugSaveBtn').onclick = async () => {
         console.log('🐛 Debug: Manual save triggered');
         console.log('Recipes:', allRecipes);
@@ -1259,7 +1360,11 @@
         await saveAllDataToCloud();
     };
 
-    // Запуск
+    function escapeHtml(str) { 
+        if(!str) return ''; 
+        return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); 
+    }
+
     updateAuthUI();
     loadSettings();
     initTabs();
