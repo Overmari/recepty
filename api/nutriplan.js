@@ -12,7 +12,6 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     if (req.method === 'OPTIONS') return res.status(200).end();
 
-    // Проверяем авторизацию (кроме опции OPTIONS)
     const token = req.headers.authorization?.split(' ')[1];
     if (req.method !== 'OPTIONS' && !token) {
         return res.status(401).json({ error: 'Unauthorized' });
@@ -54,8 +53,8 @@ export default async function handler(req, res) {
         return res.json({
             success: true,
             recipes: recipes || [],
-            menu: menu?.length ? menu[0].data : [],
-            shopping: shopping?.length ? shopping[0].data : []
+            menu: menu || [],
+            shopping: shopping || []
         });
     }
 
