@@ -300,7 +300,7 @@
                 
                 <div style="overflow-x: auto;">
                     <table class="shopping-table" id="shoppingTable">
-                        <thead><tr><th class="checkbox-col">✅</th><th>Продукт</th><th>Нужно всего</th><th>Есть дома</th><th>Докупить</th><th>Цена за ед.</th><th>Стоимость</th><th></th></table></thead>
+                        <thead><tr><th class="checkbox-col">✅</th><th>Продукт</th><th>Нужно всего</th><th>Есть дома</th><th>Докупить</th><th>Цена за ед.</th><th>Стоимость</th><th></th></tr></thead>
                         <tbody id="shoppingTableBody"></tbody>
                         <tfoot id="shoppingTableFoot"></tfoot>
                     </table>
@@ -451,51 +451,70 @@
 
     // ========== ФУНКЦИИ АВТОРИЗАЦИИ ==========
     async function signUp(email, password) {
-        const response = await fetch('/api/auth', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'signup', email, password })
-        });
-        const data = await response.json();
-        if (data.user) {
-            // После регистрации автоматически входим
-            return signIn(email, password);
+        try {
+            const response = await fetch('/api/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'signup', email, password })
+            });
+            const data = await response.json();
+            if (data.error) {
+                return { error: data.error };
+            }
+            if (data.user) {
+                // После регистрации автоматически входим
+                return await signIn(email, password);
+            }
+            return data;
+        } catch (err) {
+            return { error: err.message };
         }
-        return data;
     }
 
     async function signIn(email, password) {
-        const response = await fetch('/api/auth', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'signin', email, password })
-        });
-        const data = await response.json();
-        if (data.session?.access_token) {
-            localStorage.setItem('sb_access_token', data.session.access_token);
-            localStorage.setItem('is_guest', 'false');
+        try {
+            const response = await fetch('/api/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'signin', email, password })
+            });
+            const data = await response.json();
+            if (data.error) {
+                return { error: data.error };
+            }
+            if (data.session?.access_token) {
+                localStorage.setItem('sb_access_token', data.session.access_token);
+                localStorage.setItem('is_guest', 'false');
+            }
+            return data;
+        } catch (err) {
+            return { error: err.message };
         }
-        return data;
     }
 
     async function getSession() {
         const token = localStorage.getItem('sb_access_token');
         if (!token) return { user: null };
-        const response = await fetch('/api/auth?action=session', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        return response.json();
+        try {
+            const response = await fetch('/api/auth?action=session', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return await response.json();
+        } catch (err) {
+            return { user: null };
+        }
     }
 
     async function signOut() {
         localStorage.removeItem('sb_access_token');
         localStorage.removeItem('is_guest');
-        const response = await fetch('/api/auth', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'signout' })
-        });
-        return response.json();
+        try {
+            await fetch('/api/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'signout' })
+            });
+        } catch (err) {}
     }
 
     function guestLogin() {
@@ -617,7 +636,7 @@
         await saveAllDataToCloud();
     }
 
-    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (остаются без изменений) ==========
     function getRecipesByCategory(category) { return category === "all" ? allRecipes : allRecipes.filter(r => r.category === category); }
     function getDaysCount(period) { return period === "week" ? 7 : (period === "2weeks" ? 14 : 30); }
     
@@ -851,7 +870,7 @@
     function renderShoppingTable() {
         let tbody=document.getElementById("shoppingTableBody"), tfoot=document.getElementById("shoppingTableFoot");
         if(!tbody) return;
-        if(!shoppingItems.length){ tbody.innerHTML="<tr><td colspan='8'>Нет продуктов. Добавьте продукт через кнопку ➕ или импортируйте из меню.</td></td>"; tfoot.innerHTML=""; return; }
+        if(!shoppingItems.length){ tbody.innerHTML="<tr><td colspan='8'>Нет продуктов. Добавьте продукт через кнопку ➕ или импортируйте из меню.</td></table>"; tfoot.innerHTML=""; return; }
         let html="", totalCost=0;
         shoppingItems.forEach((item,idx)=>{ let needBuy=Math.max(0,item.totalNeeded-item.haveAtHome), cost=needBuy*item.price; totalCost+=cost; html+=`<tr class="${item.purchased?'purchased-row':''}"><td><input type="checkbox" class="purchase-checkbox" data-idx="${idx}" ${item.purchased?"checked":""}></td><td class="product-name-col">${item.name}</td><td><input type="number" class="total-needed-input" data-idx="${idx}" value="${item.totalNeeded}" step="0.1" style="width:80px;"> ${item.unit}</td><td><input type="number" class="have-input" data-idx="${idx}" value="${item.haveAtHome}" step="0.1" style="width:70px;"> ${item.unit}</td><td class="need-buy">${Math.round(needBuy*10)/10} ${item.unit}</td><td><input type="number" class="price-input" data-idx="${idx}" value="${item.price}" step="1" style="width:80px;"> ₽/${item.unit}</td><td>${Math.round(cost)} ₽</td><td><button class="delete-product-btn" data-idx="${idx}">🗑️</button></td></tr>`; });
         tbody.innerHTML=html; tfoot.innerHTML=`<tr class="total-row"><td colspan="7" style="text-align:right;">💰 Итого: </td><td><strong>${Math.round(totalCost)} ₽</strong></td></tr>`;
@@ -1054,22 +1073,37 @@
     const authError = document.getElementById('authError');
     const guestBtn = document.getElementById('guestBtn');
 
+    // Функция для обновления UI авторизации
+    function updateAuthUI() {
+        if (isLoginMode) {
+            authTitle.innerText = 'Вход в аккаунт';
+            authSubmitBtn.innerText = 'Войти';
+            authSwitch.innerText = 'Нет аккаунта? Зарегистрироваться';
+        } else {
+            authTitle.innerText = 'Регистрация';
+            authSubmitBtn.innerText = 'Зарегистрироваться';
+            authSwitch.innerText = 'Уже есть аккаунт? Войти';
+        }
+        authError.innerText = '';
+    }
+
     authSwitch.addEventListener('click', () => {
         isLoginMode = !isLoginMode;
-        authTitle.innerText = isLoginMode ? 'Вход в аккаунт' : 'Регистрация';
-        authSubmitBtn.innerText = isLoginMode ? 'Войти' : 'Зарегистрироваться';
-        authSwitch.innerText = isLoginMode ? 'Нет аккаунта? Зарегистрироваться' : 'Уже есть аккаунт? Войти';
-        authError.innerText = '';
+        updateAuthUI();
     });
 
     authSubmitBtn.addEventListener('click', async () => {
         const email = document.getElementById('authEmail').value.trim();
         const password = document.getElementById('authPassword').value;
+        
         if (!email || !password) {
             authError.innerText = 'Заполните все поля';
             return;
         }
+        
         authError.innerText = '';
+        authSubmitBtn.disabled = true;
+        authSubmitBtn.innerText = isLoginMode ? 'Вход...' : 'Регистрация...';
         
         let result;
         if (isLoginMode) {
@@ -1078,9 +1112,12 @@
             result = await signUp(email, password);
         }
         
-        if (result.error) {
+        authSubmitBtn.disabled = false;
+        authSubmitBtn.innerText = isLoginMode ? 'Войти' : 'Зарегистрироваться';
+        
+        if (result && result.error) {
             authError.innerText = result.error;
-        } else if (result.user) {
+        } else if (result && result.user) {
             currentUser = result.user;
             isGuest = false;
             document.getElementById('authContainer').style.display = 'none';
@@ -1099,12 +1136,17 @@
         await signOut();
         currentUser = null;
         isGuest = false;
+        teams = [];
         document.getElementById('authContainer').style.display = 'block';
         document.getElementById('mainApp').style.display = 'none';
         document.getElementById('authEmail').value = '';
         document.getElementById('authPassword').value = '';
+        isLoginMode = true;
+        updateAuthUI();
     });
 
+    // Запуск
+    updateAuthUI();
     loadSettings();
     initTabs();
     checkAuth();
