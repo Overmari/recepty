@@ -324,7 +324,7 @@
                 
                 <div style="overflow-x: auto;">
                     <table class="shopping-table" id="shoppingTable">
-                        <thead><tr><th class="checkbox-col">✅</th><th>Продукт</th><th>Нужно всего</th><th>Есть дома</th><th>Докупить</th><th>Цена за ед.</th><th>Стоимость</th><th></th></table></thead>
+                        <thead><tr><th class="checkbox-col">✅</th><th>Продукт</th><th>Нужно всего</th><th>Есть дома</th><th>Докупить</th><th>Цена за ед.</th><th>Стоимость</th><th></th></tr></thead>
                         <tbody id="shoppingTableBody"></tbody>
                         <tfoot id="shoppingTableFoot"></tfoot>
                     </table>
@@ -370,7 +370,7 @@
                 </div>
                 
                 <div class="batch-actions" style="margin-bottom: 16px;">
-                    <button id="deleteAllRecipesBtn" class="btn-modern btn-danger btn-sm">🗑️ Удалить все</button>
+                    <button id="deleteAllRecipesBtn" class="btn-modern btn-danger btn-sm">🗑️ Удалить все рецепты</button>
                     <button id="resetToDefaultBtn" class="btn-modern btn-sm">🔄 Сбросить к стандартным</button>
                 </div>
                 
@@ -454,12 +454,14 @@
     let currentShoppingPeriod = "week";
     let currentCategoryFilter = "all";
     let editingIndex = null;
+    let isLoading = true;
 
     const STORAGE_RECIPES = "nutriplan_recipes_crud_full";
     const STORAGE_SHOPPING = "nutriplan_shopping_crud";
     const STORAGE_MENU = "nutriplan_menu_crud";
     const STORAGE_SETTINGS = "nutriplan_settings_full";
 
+    // Стандартные рецепты (используются только для сброса)
     const DEFAULT_RECIPES = [
         { name: "🥣 Борщ", category: "soup", time: 120, ingredients: [{ name: "свёкла", qty: "2шт" }, { name: "капуста", qty: "200г" }, { name: "картофель", qty: "2шт" }, { name: "говядина на кости", qty: "300-500г" }, { name: "лук", qty: "1шт" }, { name: "морковь", qty: "2шт" }, { name: "томатная паста", qty: "2ст.л" }, { name: "вода", qty: "3л" }, { name: "лавровый лист", qty: "1шт" }, { name: "лимон", qty: "долька" }, { name: "сахар", qty: "1ст.л" }, { name: "зелень", qty: "по вкусу" }, { name: "сметана", qty: "для подачи" }], process: "1. На сухой сковороде обжариваем лук и морковь до румяной корочки.\n2. В кастрюле с мясом заливаем водой, доводим до кипения, снимаем пену и варим бульон 2 часа.\n3. Мелко нарезаем лук, натираем сырую морковь и свёклу, шинкуем капусту.\n4. Обжариваем морковь с луком, добавляем свёклу, томатную пасту, сбрызгиваем лимонным соком, вливаем половник бульона. Тушим 10 минут.\n5. Из бульона достаём мясо, добавляем картофель и капусту - варим до готовности.\n6. Добавляем зажарку со свёклой, солим, добавляем сахар, чеснок.\n7. Накрываем крышкой и даём настояться 10 минут." },
         { name: "🍗 Куриные котлеты", category: "main", time: 30, ingredients: [{ name: "филе куриное", qty: "600гр" }, { name: "лук", qty: "1шт" }, { name: "морковь", qty: "1шт" }, { name: "специи", qty: "по вкусу" }], process: "1. Пропустите курицу через мясорубку.\n2. Добавьте мелко нарезанный лук, натертую морковь, специи.\n3. Сформируйте котлеты и обжарьте до готовности." },
@@ -582,6 +584,7 @@
         if (session.user) {
             currentUser = session.user;
             isGuest = false;
+            console.log('✅ User logged in:', currentUser.email);
             await loadAllDataFromCloud();
             showMainApp();
         } else {
@@ -607,11 +610,11 @@
             const data = await response.json();
             
             if (data.success) {
-                // Загружаем рецепты
-                if (data.recipes && Array.isArray(data.recipes) && data.recipes.length > 0) {
+                // Загружаем рецепты (если есть, иначе оставляем пустой массив)
+                if (data.recipes && Array.isArray(data.recipes)) {
                     allRecipes = data.recipes;
                 } else {
-                    allRecipes = [...DEFAULT_RECIPES];
+                    allRecipes = [];
                 }
                 
                 // Загружаем меню
@@ -686,11 +689,11 @@
     function loadAllDataFromLocal() {
         let stored = localStorage.getItem(STORAGE_RECIPES);
         if (stored) { try { allRecipes = JSON.parse(stored); } catch(e){} }
-        if (!allRecipes || !allRecipes.length) allRecipes = [...DEFAULT_RECIPES];
+        if (!allRecipes) allRecipes = [];
         
         let menuStored = localStorage.getItem(STORAGE_MENU);
         if (menuStored) { try { currentMenu = JSON.parse(menuStored); } catch(e){} }
-        if (!currentMenu.length) generateMenuFromPeriod();
+        if (!currentMenu || !currentMenu.length) generateMenuFromPeriod();
         
         let shopStored = localStorage.getItem(STORAGE_SHOPPING);
         if (shopStored) { try { shoppingItems = JSON.parse(shopStored); } catch(e){} }
@@ -706,7 +709,7 @@
         updateShoppingPeriodInfo();
     }
 
-    // ========== РАБОТА С РЕЦЕПТАМИ ==========
+    // ========== РАБОТА С МЕНЮ ==========
     function getRecipesByCategory(category) { return category === "all" ? allRecipes : allRecipes.filter(r => r.category === category); }
     function getDaysCount(period) { return period === "week" ? 7 : (period === "2weeks" ? 14 : 30); }
     
@@ -940,9 +943,9 @@
     function renderShoppingTable() {
         let tbody=document.getElementById("shoppingTableBody"), tfoot=document.getElementById("shoppingTableFoot");
         if(!tbody) return;
-        if(!shoppingItems.length){ tbody.innerHTML="<td><td colspan='8'>Нет продуктов. Добавьте продукт через кнопку ➕ или импортируйте из меню.</td></tr>"; tfoot.innerHTML=""; return; }
+        if(!shoppingItems.length){ tbody.innerHTML="<td><td colspan='8'>Нет продуктов. Добавьте продукт через кнопку ➕ или импортируйте из меню.</td></table>"; tfoot.innerHTML=""; return; }
         let html="", totalCost=0;
-        shoppingItems.forEach((item,idx)=>{ let needBuy=Math.max(0,item.totalNeeded-item.haveAtHome), cost=needBuy*item.price; totalCost+=cost; html+=`<tr class="${item.purchased?'purchased-row':''}"><td><input type="checkbox" class="purchase-checkbox" data-idx="${idx}" ${item.purchased?"checked":""}></td><td class="product-name-col">${item.name}</td><td><input type="number" class="total-needed-input" data-idx="${idx}" value="${item.totalNeeded}" step="0.1" style="width:80px;"> ${item.unit}</td><td><input type="number" class="have-input" data-idx="${idx}" value="${item.haveAtHome}" step="0.1" style="width:70px;"> ${item.unit}</td><td class="need-buy">${Math.round(needBuy*10)/10} ${item.unit}</td><td><input type="number" class="price-input" data-idx="${idx}" value="${item.price}" step="1" style="width:80px;"> ₽/${item.unit}</td><td>${Math.round(cost)} ₽</span></td><td><button class="delete-product-btn" data-idx="${idx}">🗑️</button></td></tr>`; });
+        shoppingItems.forEach((item,idx)=>{ let needBuy=Math.max(0,item.totalNeeded-item.haveAtHome), cost=needBuy*item.price; totalCost+=cost; html+=`<tr class="${item.purchased?'purchased-row':''}"><td><input type="checkbox" class="purchase-checkbox" data-idx="${idx}" ${item.purchased?"checked":""}><tr><td class="product-name-col">${item.name}</td><td><input type="number" class="total-needed-input" data-idx="${idx}" value="${item.totalNeeded}" step="0.1" style="width:80px;"> ${item.unit}</td><td><input type="number" class="have-input" data-idx="${idx}" value="${item.haveAtHome}" step="0.1" style="width:70px;"> ${item.unit}</td><td class="need-buy">${Math.round(needBuy*10)/10} ${item.unit}</td><td><input type="number" class="price-input" data-idx="${idx}" value="${item.price}" step="1" style="width:80px;"> ₽/${item.unit}</td><td>${Math.round(cost)} ₽</span></td><td><button class="delete-product-btn" data-idx="${idx}">🗑️</button></td></tr>`; });
         tbody.innerHTML=html; tfoot.innerHTML=`<tr class="total-row"><td colspan="7" style="text-align:right;">💰 Итого: <tr><td><strong>${Math.round(totalCost)} ₽</strong></td></tr>`;
         document.querySelectorAll(".total-needed-input").forEach(inp=>{ inp.onchange=()=>{ let i=parseInt(inp.dataset.idx); if(!isNaN(i)){ shoppingItems[i].totalNeeded=parseFloat(inp.value)||0; saveAllDataToCloud(); renderShoppingTable(); } }; });
         document.querySelectorAll(".purchase-checkbox").forEach(cb=>{ cb.onchange=()=>{ let i=parseInt(cb.dataset.idx); if(!isNaN(i)){ shoppingItems[i].purchased=cb.checked; saveAllDataToCloud(); renderShoppingTable(); } }; });
@@ -1006,7 +1009,6 @@
             allRecipes.splice(idx, 1);
             saveAllDataToCloud();
             renderRecipesList();
-            // Обновляем меню, если в нём есть удалённые рецепты
             updateMenuAfterRecipeDelete();
         }
     }
@@ -1033,9 +1035,17 @@
     
     function deleteAllRecipes() {
         if(confirm("Удалить ВСЕ рецепты? Это действие нельзя отменить!")) {
-            allRecipes = [...DEFAULT_RECIPES];
+            allRecipes = [];
             saveAllDataToCloud();
             renderRecipesList();
+            // Обновляем меню - заменяем удалённые рецепты на "Нет рецептов"
+            for (let day of currentMenu) {
+                for (let meal of ["breakfast","lunch","dinner","snack","dessert"]) {
+                    if (day[meal] && !day[meal].isManual) {
+                        day[meal] = { name: "❌ Нет рецептов", category: day[meal].category, time: 0, ingredients: [], process: "", isManual: true, customText: "❌ Нет рецептов" };
+                    }
+                }
+            }
             renderMenuUI();
             updateShoppingListFromMenu();
         }
@@ -1046,8 +1056,7 @@
             allRecipes = [...DEFAULT_RECIPES];
             saveAllDataToCloud();
             renderRecipesList();
-            renderMenuUI();
-            updateShoppingListFromMenu();
+            generateMenuFromPeriod();
         }
     }
     
