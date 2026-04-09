@@ -1236,5 +1236,26 @@
     initTabs();
     checkAuth();
 </script>
+<!-- Кнопка для проверки сохранения -->
+<div style="position: fixed; bottom: 10px; right: 10px; z-index: 9999;">
+    <button id="debugSaveBtn" style="background: #333; color: white; padding: 5px 10px; font-size: 10px;">🐛 Debug: Сохранить в облако</button>
+</div>
+
+<script>
+    // Добавляем обработчик для отладки
+    setTimeout(() => {
+        const debugBtn = document.getElementById('debugSaveBtn');
+        if (debugBtn) {
+            debugBtn.onclick = async () => {
+                console.log('🐛 Debug: Manual save triggered');
+                console.log('Recipes:', allRecipes);
+                console.log('Menu:', currentMenu);
+                console.log('Shopping:', shoppingItems);
+                await saveAllDataToCloud();
+                alert('Сохранение выполнено! Проверьте логи и Supabase.');
+            };
+        }
+    }, 1000);
+</script>
 </body>
 </html>
