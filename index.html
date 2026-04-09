@@ -78,6 +78,26 @@
         .guest-btn { background: linear-gradient(135deg, #64748b 0%, #475569 100%) !important; margin-top: 12px !important; }
         .error-msg { color: #ef4444; font-size: 14px; margin-bottom: 16px; text-align: center; }
         
+        /* Скелетон загрузки */
+        .loading-skeleton {
+            background: rgba(255,255,255,0.8);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .skeleton-line {
+            height: 20px;
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
         .tabs-modern {
             display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px;
             background: rgba(255,255,255,0.7); padding: 8px; border-radius: 80px;
@@ -213,7 +233,7 @@
 <body>
 <div class="app-container">
     <!-- Авторизация -->
-    <div id="authContainer" class="auth-container">
+    <div id="authContainer" class="auth-container" style="display: none;">
         <h2 id="authTitle">Вход в аккаунт</h2>
         <div id="authError" class="error-msg"></div>
         <input type="email" id="authEmail" placeholder="Email" autocomplete="email">
@@ -221,6 +241,14 @@
         <button id="authSubmitBtn">Войти</button>
         <div class="switch" id="authSwitch">Нет аккаунта? Зарегистрироваться</div>
         <button id="guestBtn" class="guest-btn">👥 Продолжить без регистрации (гость)</button>
+    </div>
+
+    <!-- Скелетон загрузки -->
+    <div id="loadingSkeleton" class="loading-skeleton" style="display: none;">
+        <div class="skeleton-line" style="width: 60%;"></div>
+        <div class="skeleton-line" style="width: 40%;"></div>
+        <div class="skeleton-line" style="width: 80%;"></div>
+        <div class="skeleton-line" style="width: 50%;"></div>
     </div>
 
     <!-- Основное приложение -->
@@ -300,7 +328,7 @@
                 
                 <div style="overflow-x: auto;">
                     <table class="shopping-table" id="shoppingTable">
-                        <thead><tr><th class="checkbox-col">✅</th><th>Продукт</th><th>Нужно всего</th><th>Есть дома</th><th>Докупить</th><th>Цена за ед.</th><th>Стоимость</th><th></th></table></thead>
+                        <thead><tr><th class="checkbox-col">✅</th><th>Продукт</th><th>Нужно всего</th><th>Есть дома</th><th>Докупить</th><th>Цена за ед.</th><th>Стоимость</th><th></th></tr></thead>
                         <tbody id="shoppingTableBody"></tbody>
                         <tfoot id="shoppingTableFoot"></tfoot>
                     </table>
@@ -433,6 +461,7 @@
     let currentShoppingPeriod = "week";
     let currentCategoryFilter = "all";
     let editingIndex = null;
+    let isLoading = true;
 
     // Константы для localStorage (гость)
     const STORAGE_RECIPES = "nutriplan_recipes_crud_full";
@@ -517,37 +546,60 @@
                 body: JSON.stringify({ action: 'signout' })
             });
         } catch (err) {}
+        // После выхода показываем форму входа
+        document.getElementById('authContainer').style.display = 'block';
+        document.getElementById('mainApp').style.display = 'none';
+        document.getElementById('loadingSkeleton').style.display = 'none';
     }
 
     function guestLogin() {
         isGuest = true;
         currentUser = { id: 'guest', email: 'Гостевой режим' };
         localStorage.setItem('is_guest', 'true');
-        document.getElementById('authContainer').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-        document.getElementById('userEmail').innerText = 'Гостевой режим';
-        document.getElementById('guestBadge').style.display = 'inline-block';
+        localStorage.removeItem('sb_access_token');
+        showMainApp();
         loadAllDataFromLocal();
     }
 
+    function showMainApp() {
+        document.getElementById('authContainer').style.display = 'none';
+        document.getElementById('loadingSkeleton').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        if (isGuest) {
+            document.getElementById('userEmail').innerText = 'Гостевой режим';
+            document.getElementById('guestBadge').style.display = 'inline-block';
+        } else if (currentUser) {
+            document.getElementById('userEmail').innerText = currentUser.email;
+            document.getElementById('guestBadge').style.display = 'none';
+        }
+    }
+
+    function showLoading() {
+        document.getElementById('authContainer').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'none';
+        document.getElementById('loadingSkeleton').style.display = 'block';
+    }
+
     async function checkAuth() {
+        showLoading();
+        
         const isGuestStored = localStorage.getItem('is_guest') === 'true';
         if (isGuestStored) {
             guestLogin();
             return;
         }
+        
         const session = await getSession();
         if (session.user) {
             currentUser = session.user;
             isGuest = false;
-            document.getElementById('authContainer').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'block';
-            document.getElementById('userEmail').innerText = currentUser.email;
-            document.getElementById('guestBadge').style.display = 'none';
             await loadAllDataFromCloud();
+            showMainApp();
         } else {
+            // Нет активной сессии, показываем форму входа
             document.getElementById('authContainer').style.display = 'block';
             document.getElementById('mainApp').style.display = 'none';
+            document.getElementById('loadingSkeleton').style.display = 'none';
         }
     }
 
@@ -891,7 +943,7 @@
     function renderShoppingTable() {
         let tbody=document.getElementById("shoppingTableBody"), tfoot=document.getElementById("shoppingTableFoot");
         if(!tbody) return;
-        if(!shoppingItems.length){ tbody.innerHTML="<tr><td colspan='8'>Нет продуктов. Добавьте продукт через кнопку ➕ или импортируйте из меню.</td></td>"; tfoot.innerHTML=""; return; }
+        if(!shoppingItems.length){ tbody.innerHTML="<tr><td colspan='8'>Нет продуктов. Добавьте продукт через кнопку ➕ или импортируйте из меню.<tr></td>"; tfoot.innerHTML=""; return; }
         let html="", totalCost=0;
         shoppingItems.forEach((item,idx)=>{ let needBuy=Math.max(0,item.totalNeeded-item.haveAtHome), cost=needBuy*item.price; totalCost+=cost; html+=`<tr class="${item.purchased?'purchased-row':''}"><td><input type="checkbox" class="purchase-checkbox" data-idx="${idx}" ${item.purchased?"checked":""}></td><td class="product-name-col">${item.name}</td><td><input type="number" class="total-needed-input" data-idx="${idx}" value="${item.totalNeeded}" step="0.1" style="width:80px;"> ${item.unit}</td><td><input type="number" class="have-input" data-idx="${idx}" value="${item.haveAtHome}" step="0.1" style="width:70px;"> ${item.unit}</td><td class="need-buy">${Math.round(needBuy*10)/10} ${item.unit}</td><td><input type="number" class="price-input" data-idx="${idx}" value="${item.price}" step="1" style="width:80px;"> ₽/${item.unit}</td><td>${Math.round(cost)} ₽</span></td><td><button class="delete-product-btn" data-idx="${idx}">🗑️</button></td></tr>`; });
         tbody.innerHTML=html; tfoot.innerHTML=`<tr class="total-row"><td colspan="7" style="text-align:right;">💰 Итого: </td><td><strong>${Math.round(totalCost)} ₽</strong></td></tr>`;
@@ -1140,11 +1192,9 @@
         } else if (result && result.user) {
             currentUser = result.user;
             isGuest = false;
-            document.getElementById('authContainer').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'block';
-            document.getElementById('userEmail').innerText = currentUser.email;
-            document.getElementById('guestBadge').style.display = 'none';
+            showLoading();
             await loadAllDataFromCloud();
+            showMainApp();
         }
     });
 
@@ -1156,9 +1206,13 @@
         await signOut();
         currentUser = null;
         isGuest = false;
-        teams = [];
+        allRecipes = [];
+        currentMenu = [];
+        shoppingItems = [];
+        // Показываем форму входа
         document.getElementById('authContainer').style.display = 'block';
         document.getElementById('mainApp').style.display = 'none';
+        document.getElementById('loadingSkeleton').style.display = 'none';
         document.getElementById('authEmail').value = '';
         document.getElementById('authPassword').value = '';
         isLoginMode = true;
