@@ -12,21 +12,21 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     if (req.method === 'OPTIONS') return res.status(200).end();
 
-    // Проверяем авторизацию
+    // Проверяем авторизацию (кроме опции OPTIONS)
     const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
+    if (req.method !== 'OPTIONS' && !token) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
-    
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    
-    const userId = user.id;
 
     // GET: получение всех данных пользователя
     if (req.method === 'GET' && req.query.action === 'all') {
+        const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+        if (userError || !user) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+        
+        const userId = user.id;
+        
         // Получаем рецепты
         const { data: recipes, error: recipesError } = await supabase
             .from('nutriplan_recipes')
@@ -61,6 +61,12 @@ export default async function handler(req, res) {
 
     // POST: сохранение всех данных
     if (req.method === 'POST' && req.body.action === 'save_all') {
+        const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+        if (userError || !user) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+        
+        const userId = user.id;
         const { recipes, menu, shopping } = req.body;
         
         // Сохраняем рецепты
@@ -82,7 +88,7 @@ export default async function handler(req, res) {
             if (recipesInsertError) return res.status(500).json({ error: recipesInsertError.message });
         }
         
-        // Сохраняем меню (одна запись)
+        // Сохраняем меню
         const { error: menuDeleteError } = await supabase
             .from('nutriplan_menu')
             .delete()
@@ -97,7 +103,7 @@ export default async function handler(req, res) {
             if (menuInsertError) return res.status(500).json({ error: menuInsertError.message });
         }
         
-        // Сохраняем список покупок (одна запись)
+        // Сохраняем список покупок
         const { error: shoppingDeleteError } = await supabase
             .from('nutriplan_shopping')
             .delete()
