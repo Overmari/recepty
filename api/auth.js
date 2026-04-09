@@ -7,6 +7,7 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
+    // Разрешаем CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -41,16 +42,6 @@ export default async function handler(req, res) {
                 return res.status(400).json({ error: error.message });
             }
             
-            if (data.user) {
-                const { error: profileError } = await supabase
-                    .from('profiles')
-                    .insert([{ id: data.user.id, email: email }]);
-                
-                if (profileError) {
-                    console.error('Profile creation error:', profileError);
-                }
-            }
-            
             return res.json({ user: data.user });
         }
         
@@ -59,20 +50,6 @@ export default async function handler(req, res) {
             if (error) {
                 console.error('Signin error:', error);
                 return res.status(400).json({ error: error.message });
-            }
-            
-            if (data.user) {
-                const { data: existingProfile } = await supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('id', data.user.id)
-                    .single();
-                
-                if (!existingProfile) {
-                    await supabase
-                        .from('profiles')
-                        .insert([{ id: data.user.id, email: email }]);
-                }
             }
             
             return res.json({ 
